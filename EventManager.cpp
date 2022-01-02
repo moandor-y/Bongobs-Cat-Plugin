@@ -8,6 +8,7 @@
 #include "EventManager.hpp"
 #include <math.h>
 #include <Windows.h>
+#include <algorithm>
 
 EventManager::EventManager()
     : _startY(0.0f)
@@ -95,11 +96,24 @@ void EventManager::MouseEventMoved(int width, int height, float deviceX,
 
 void EventManager::KeyEventDown(int key)
 {
+	std::lock_guard lock(mutex_);
+
 	_keyEvent[key].KeyBoardSignal = true;
+
+	if (std::remove(pressed_keys_.begin(), pressed_keys_.end(), key) ==
+	    pressed_keys_.end()) {
+		pressed_keys_.push_back(key);
+	}
 }
 
 void EventManager::KeyEventUp(int key) {
+	std::lock_guard lock(mutex_);
+
 	_keyEvent[key].KeyBoardSignal = false;
+
+	pressed_keys_.erase(std::remove(pressed_keys_.begin(),
+					pressed_keys_.end(), key),
+			    pressed_keys_.end());
 }
 
 void EventManager::LeftButtonDown() {
@@ -140,6 +154,12 @@ float EventManager::GetFlickDistance() const
     return CalculateDistance(_startX, _startY, _lastX, _lastY);
 }
 
+std::vector<int> EventManager::GetPressedKeys()
+{
+	std::lock_guard lock(mutex_);
+	return pressed_keys_;
+}
+
 float EventManager::CalculateDistance(float x1, float y1, float x2, float y2) const
 {
     return sqrtf((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
@@ -157,3 +177,4 @@ float EventManager::CalculateMovingAmount(float v1, float v2)
     float absoluteValue2 = fabsf(v2);
     return sign * ((absoluteValue1 < absoluteValue2) ? absoluteValue1 : absoluteValue2);
 }
+

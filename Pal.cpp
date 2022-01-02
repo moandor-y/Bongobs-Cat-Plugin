@@ -1,4 +1,4 @@
-#include "Pal.hpp"
+﻿#include "Pal.hpp"
 #include <iostream>
 #include <fstream>
 #include <Model/CubismMoc.hpp>

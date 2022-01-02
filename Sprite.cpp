@@ -1,4 +1,4 @@
-#include "Sprite.hpp"
+﻿#include "Sprite.hpp"
 #include "VtuberDelegate.hpp"
 
 Sprite::Sprite(float x, float y, float width, float height,

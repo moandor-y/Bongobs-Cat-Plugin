@@ -161,7 +161,6 @@ void View::RenderCat(int id) {
 
 void View::RenderKeys(int id)
 {
-
 	for (int i = 0; i < KeyAmount; i++) {
 		if (eventManager->GetKeySignal(i)) {
 			int key = TranslateKey(i, id);
@@ -178,18 +177,21 @@ bool View::RenderLeftHands(int id) {
 	Live2DManager *Live2DManager = Live2DManager::GetInstance();
 	bool isUp = true;
 	if (_viewData[id]._mode[_mod]._leftHandsCount > 0) {	
-		for (int i = 0; i < KeyAmount; i++) {
-			if (eventManager->GetKeySignal(i)) {
+		std::vector<int> pressed_keys = eventManager->GetPressedKeys();
+		for (auto iter = pressed_keys.rbegin();
+		     iter != pressed_keys.rend(); ++iter) {
+			int key = TranslateKey(*iter, id);
+			if (key != -1 &&
+			    key < _viewData[id]._mode[_mod]._leftHandsCount) {
 
-				int key = TranslateKey(i, id);
-				if (key != -1 && key < _viewData[id]._mode[_mod]._leftHandsCount) {
+				if (_viewData[id]._mode[_mod]._leftHands[key])
+					_viewData[id]
+						._mode[_mod]
+						._leftHands[key]
+						->Render(id);
 
-					if (_viewData[id]._mode[_mod] ._leftHands[key])
-						_viewData[id]._mode[_mod]._leftHands[key]->Render(id);
-
-					isUp = false;
-					break; //cat only have one right hand
-				}
+				isUp = false;
+				break;
 			}
 		}
 
@@ -209,21 +211,24 @@ bool View::RenderRightHands(int id) {
 	Live2DManager *Live2DManager = Live2DManager::GetInstance();
 	bool isUp = true;
 	if (_viewData[id]._mode[_mod]._rightHandsCount > 0) {
-		
+		std::vector<int> pressed_keys = eventManager->GetPressedKeys();
+		for (auto iter = pressed_keys.rbegin();
+		     iter != pressed_keys.rend(); ++iter) {
+			int key = TranslateKey(*iter, id) -
+				  _viewData[id]._mode[_mod]._leftHandsCount;
 
-		for (int i = 0; i < KeyAmount; i++) {
-			if (eventManager->GetKeySignal(i)) {
-				int key = TranslateKey(i, id) - _viewData[id]._mode[_mod]._leftHandsCount;
+			if (key >= 0 &&
+			    key < _viewData[id]._mode[_mod]._rightHandsCount) {
 
-				if (key >= 0 && key < _viewData[id]._mode[_mod]._rightHandsCount) {
-
-					if (_viewData[id]._mode[_mod]._rightHands[key])
-						_viewData[id]._mode[_mod]._rightHands[key]->Render(id);
-					isUp = false;
-					break; //cat only have one right hand
-				}
+				if (_viewData[id]._mode[_mod]._rightHands[key])
+					_viewData[id]
+						._mode[_mod]
+						._rightHands[key]
+						->Render(id);
+				isUp = false;
+				break;
 			}
-		}			
+		}
 	} else if (_viewData[id]._mode[_mod]._hasRightHandModel) {	
 		if (!isUseLive2d) {	
 			Live2DManager->OnUpdate(_viewData[id]._mode[_mod]._rightHandModelId);

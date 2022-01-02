@@ -9,7 +9,8 @@
 
 #define KEYAMOUT 200
 
-#include <queue>
+#include <vector>
+#include <mutex>
 
 struct KeyEvent {
 	bool KeyBoardSignal;
@@ -103,6 +104,8 @@ public:
     */
     float GetFlickDistance() const;
 
+    std::vector<int> GetPressedKeys();
+
 private:
     /*
     * @brief 点1から点2への距離を求める
@@ -145,4 +148,9 @@ private:
 
     int _relativemouseX;
     int _relativemouseY;
+
+    std::vector<int> pressed_keys_;
+
+    std::mutex mutex_;
 };
+
