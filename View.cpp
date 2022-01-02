@@ -1,4 +1,4 @@
-#include "View.hpp"
+﻿#include "View.hpp"
 #include <math.h>
 #include <string>
 #include "Pal.hpp"
