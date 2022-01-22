@@ -103,12 +103,12 @@ public:
     Csm::Rendering::CubismOffscreenFrame_OpenGLES2& GetRenderBuffer();
 
     void UpdataSetting(Csm::csmBool _randomMotion, Csm::csmFloat32 _delayTime,
-		       Csm::csmBool _isBreath, Csm::csmBool _isEyeBlink, 
-		       Csm::csmBool _isTrack,Csm::csmBool _isMouseHorizontalFlip,
-		       Csm::csmBool _IsMouseVerticalFlip);
+                       Csm::csmBool _isBreath, Csm::csmBool _isEyeBlink, 
+                       Csm::csmBool _isTrack,Csm::csmBool _isMouseHorizontalFlip,
+                       Csm::csmBool _IsMouseVerticalFlip);
 
     void UpdateMouseState(Csm::csmFloat32 mouseX,Csm::csmFloat32 mouseY,
-		       Csm::csmBool _lButton, Csm::csmBool _rButton);
+                       Csm::csmBool _lButton, Csm::csmBool _rButton);
 
 
     Csm::csmFloat32 GetDeltaTime();

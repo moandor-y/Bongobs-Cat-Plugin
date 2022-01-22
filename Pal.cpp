@@ -43,9 +43,9 @@ csmByte* Pal::LoadFileAsBytes(const string filePath, csmSizeInt* outSize)
     int size = 0;
     struct _stat32 statBuf;
     if (_wstat32(wstr, &statBuf) == 0) {
-	    size = statBuf.st_size;
+            size = statBuf.st_size;
     } else {
-	    size = 0;
+            size = 0;
     }
 #endif // X64
     std::fstream file;
@@ -89,54 +89,54 @@ void Pal::PrintMessage(const csmChar* message)
 
 bool Pal::IsFileExist(const Csm::csmChar *csDir)
 {
-	bool re;
+        bool re;
 
-	int wchars_num = MultiByteToWideChar(CP_UTF8, 0, csDir, -1, NULL, 0);
-	wchar_t *wstr = new wchar_t[wchars_num];
-	MultiByteToWideChar(CP_UTF8, 0, csDir, -1, wstr, wchars_num);
-	
-	int size = 0;
-	struct _stat64 statBuf;
-	if (_wstat64(wstr, &statBuf) == 0) {
-		re = true;
-	} else {
-		re = false;
-	}
-	delete[] wstr;
+        int wchars_num = MultiByteToWideChar(CP_UTF8, 0, csDir, -1, NULL, 0);
+        wchar_t *wstr = new wchar_t[wchars_num];
+        MultiByteToWideChar(CP_UTF8, 0, csDir, -1, wstr, wchars_num);
+        
+        int size = 0;
+        struct _stat64 statBuf;
+        if (_wstat64(wstr, &statBuf) == 0) {
+                re = true;
+        } else {
+                re = false;
+        }
+        delete[] wstr;
 
-	return re;
+        return re;
 }
 
 int Pal::GetAllDirName(const Csm::csmChar *csDir, Csm::csmChar **Files)
 {
-	return 0;
+        return 0;
 }
 
 const char *Pal::GetModelName(const char *filePath)
 {
-	string _filepath = filePath;
-	_filepath += "/*.model3.json";
+        string _filepath = filePath;
+        _filepath += "/*.model3.json";
 
-	struct _finddata_t fileInfo;
-	long long findResult = _findfirst(_filepath.c_str(), &fileInfo);
-	if (findResult == -1) {
-		_findclose(findResult);
-		return "";
-	}
-	_findclose(findResult);
+        struct _finddata_t fileInfo;
+        long long findResult = _findfirst(_filepath.c_str(), &fileInfo);
+        if (findResult == -1) {
+                _findclose(findResult);
+                return "";
+        }
+        _findclose(findResult);
 
-	string _filename = fileInfo.name;
-	char *buf = new char[_filename.size()+1];
-	buf[_filename.size()] = 0x00;
-	memcpy(buf, _filename.c_str(), _filename.size());
+        string _filename = fileInfo.name;
+        char *buf = new char[_filename.size()+1];
+        buf[_filename.size()] = 0x00;
+        memcpy(buf, _filename.c_str(), _filename.size());
 
-	return buf;
+        return buf;
 }
 
 void Pal::GetDesktopResolution(int &horizontal, int &vertical) {
-	RECT desktop;
-	const HWND hDesktop = GetDesktopWindow();
-	GetWindowRect(hDesktop, &desktop);
-	horizontal = desktop.right;
-	vertical = desktop.bottom;
+        RECT desktop;
+        const HWND hDesktop = GetDesktopWindow();
+        GetWindowRect(hDesktop, &desktop);
+        horizontal = desktop.right;
+        vertical = desktop.bottom;
 }

@@ -20,21 +20,21 @@ class Hook;
 */
 class VtuberDelegate {
 
-	struct RenderInfo {
-		bool isLoadResource;
-		//view
-		double viewPoint_x;
-		double viewPoint_y;
-		int windowWidth;
-		int windowHeight; 				
-		double Scale;
-	};
+        struct RenderInfo {
+                bool isLoadResource;
+                //view
+                double viewPoint_x;
+                double viewPoint_y;
+                int windowWidth;
+                int windowHeight; 				
+                double Scale;
+        };
 
 public:
 
-	static VtuberDelegate *GetInstance();
+        static VtuberDelegate *GetInstance();
 
-	static void ReleaseInstance();
+        static void ReleaseInstance();
 
     /*
     *@breif 不处理opengl相关的初始化
@@ -77,9 +77,9 @@ public:
 
 
     void updataModelSetting(bool _randomMotion, double _delayTime, bool _breath,
-			    bool _eyeBlink, bool _track,
-			    bool _isMouseHorizontalFlip,bool _isMouseVerticalFlip,
-		            int id);
+                            bool _eyeBlink, bool _track,
+                            bool _isMouseHorizontalFlip,bool _isMouseVerticalFlip,
+                            int id);
 
     const char ** GetModeDefine(int &size);
 
@@ -94,19 +94,19 @@ private:
     /**
     * @brief   コンストラクタ
     */
-	VtuberDelegate();
+        VtuberDelegate();
 
     /**
     * @brief   デストラクタ
     */
-	~VtuberDelegate();
+        ~VtuberDelegate();
 
     /**
     * @brief   Cubism SDK の初期化
     */
-	void InitializeCubism();
+        void InitializeCubism();
 
-	
+        
 
 
     LAppAllocator _cubismAllocator;              ///< Cubism SDK Allocator

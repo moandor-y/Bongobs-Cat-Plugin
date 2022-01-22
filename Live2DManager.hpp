@@ -23,10 +23,10 @@ class Model;
 */
 class Live2DManager
 {
-	struct ModelData {
-		Csm::csmVector<Model *>_models; ///< モデルインスタンスのコンテナ
-		Csm::csmString _modelPath;
-	};
+        struct ModelData {
+                Csm::csmVector<Model *>_models; ///< モデルインスタンスのコンテナ
+                Csm::csmString _modelPath;
+        };
 
 public:
     /**
@@ -72,10 +72,10 @@ public:
     void ChangeMouseMovement(Csm::csmBool _mouse);
 
     void UpdateModelSetting(Csm::csmBool randomMotion,
-			    Csm::csmFloat32 delayTime, Csm::csmBool isBreath,
-			    Csm::csmBool isEyeBlink,Csm::csmBool isTrack,
-			    Csm::csmBool isMouseHorizontalFlip,
-			    Csm::csmBool _sMouseVerticalFlip);
+                            Csm::csmFloat32 delayTime, Csm::csmBool isBreath,
+                            Csm::csmBool isEyeBlink,Csm::csmBool isTrack,
+                            Csm::csmBool isMouseHorizontalFlip,
+                            Csm::csmBool _sMouseVerticalFlip);
 
 private:
     /**
