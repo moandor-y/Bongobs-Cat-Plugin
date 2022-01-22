@@ -59,7 +59,7 @@ void VtuberFrameWork::UpData(int id,double _x, double _y, int width, int height,
                 _randomMotion, _delayTime, _break, _eyeBlink, _tarck, _isMouseHorizontalFlip, _isMouseVerticalFlip,id);
         VtuberDelegate::GetInstance()->ChangeModel(modelPath,id);
         VtuberDelegate::GetInstance()->ChangeMode(mode, _live2d, _isUsemask,id);
-        VtuberDelegate::GetInstance()->ChangeMouseMovement(relative_mouse);
+        VtuberDelegate::GetInstance()->ChangeMouseMovement(id, relative_mouse);
 }
 
 const char** VtuberFrameWork::GetModeDefine(int &_size) {

@@ -318,7 +318,6 @@ LRESULT Hook::WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                                 int xPosRelative = raw->data.mouse.lLastX;
                                 int yPosRelative = raw->data.mouse.lLastY;
                                 eventManager->SetRelativeMouse(xPosRelative,yPosRelative);
-
                         }
                         delete[] lpbBuffer;
                         break;

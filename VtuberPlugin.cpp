@@ -4,6 +4,7 @@
 */
 #include "VtuberPlugin.hpp"
 #include "VtuberFrameWork.hpp"
+#include "Live2DManager.hpp"
 #include <obs-module.h>
 
 namespace{
@@ -24,7 +25,7 @@ void * VtuberPlugin::VtuberPlugin::VtuberCreate(obs_data_t *settings,
                                                            obs_source_t *source)
 {
         static int id = 0;
-        Vtuber_data *vtb = (Vtuber_data *)malloc(sizeof(Vtuber_data));
+        Vtuber_data *vtb = new Vtuber_data();
         vtb->source = source;
         vtb->modelId = id++;
 
@@ -44,6 +45,10 @@ void * VtuberPlugin::VtuberPlugin::VtuberCreate(obs_data_t *settings,
         bool mouse_horizontal_flip =obs_data_get_bool(settings, "mouse_horizontal_flip");
         bool mouse_vertical_flip =obs_data_get_bool(settings, "mouse_vertical_flip");
         bool mask = obs_data_get_bool(settings, "mask");
+        int screen_top_override = obs_data_get_int(settings, "screen_top_override");
+        int screen_bottom_override = obs_data_get_int(settings, "screen_bottom_override");
+        int screen_left_override = obs_data_get_int(settings, "screen_left_override");
+        int screen_right_override = obs_data_get_int(settings, "screen_right_override");
 
         VtuberFrameWork::InitVtuber(vtb->modelId);
 
@@ -51,7 +56,12 @@ void * VtuberPlugin::VtuberPlugin::VtuberCreate(obs_data_t *settings,
                                 delayTime, random_motion, breath, eyeblink,
                                 NULL, track, mode, live2D, relative_mouse,
                                 mouse_horizontal_flip, mouse_vertical_flip,mask);
-        return vtb;
+
+	Live2DManager::GetInstance()->SetScreenOverride(
+		vtb->modelId, screen_top_override, screen_bottom_override,
+		screen_left_override, screen_right_override);
+
+	return vtb;
 }
 
 void VtuberPlugin::VtuberPlugin::VtuberDestroy(void *data)
@@ -151,6 +161,10 @@ obs_properties_t * VtuberPlugin::VtuberPlugin::VtuberGetProperties(void *data)
         obs_properties_add_bool(ppts, "breath", obs_module_text("Breath"));
         obs_properties_add_bool(ppts, "eyeblink", obs_module_text("EyeBlink"));
         obs_properties_add_bool(ppts, "track", obs_module_text("Mouse Tracktion"));
+        obs_properties_add_int(ppts, "screen_top_override", obs_module_text("Screen Top Override"), -1, 1'000'000'000, 1);
+        obs_properties_add_int(ppts, "screen_bottom_override", obs_module_text("Screen Bottom Override"), -1, 1'000'000'000, 1);
+        obs_properties_add_int(ppts, "screen_left_override", obs_module_text("Screen Left Override"), -1, 1'000'000'000, 1);
+        obs_properties_add_int(ppts, "screen_right_override", obs_module_text("Screen Right Override"), -1, 1'000'000'000, 1);
         
 
         return ppts;
@@ -177,6 +191,10 @@ void VtuberPlugin::VtuberPlugin::Vtuber_update(
         bool mouse_horizontal_flip =obs_data_get_bool(settings, "mouse_horizontal_flip");
         bool mouse_vertical_flip =obs_data_get_bool(settings, "mouse_vertical_flip");
         bool mask = obs_data_get_bool(settings, "mask");
+        int screen_top_override = obs_data_get_int(settings, "screen_top_override");
+        int screen_bottom_override = obs_data_get_int(settings, "screen_bottom_override");
+        int screen_left_override = obs_data_get_int(settings, "screen_left_override");
+        int screen_right_override = obs_data_get_int(settings, "screen_right_override");
 
         const char *vtb_str = NULL; //obs_data_get_string(settings, "models_path");
 
@@ -185,6 +203,10 @@ void VtuberPlugin::VtuberPlugin::Vtuber_update(
                                 vtb_str, track, mode, live2D, relative_mouse,
                                 mouse_horizontal_flip, mouse_vertical_flip,
                                 mask);
+
+	Live2DManager::GetInstance()->SetScreenOverride(
+		vtb->modelId, screen_top_override, screen_bottom_override,
+		screen_left_override, screen_right_override);
 }
 
 void VtuberPlugin::VtuberPlugin::Vtuber_defaults(
@@ -206,4 +228,8 @@ void VtuberPlugin::VtuberPlugin::Vtuber_defaults(
         obs_data_set_default_bool(settings, "mouse_horizontal_flip",true);
         obs_data_set_default_bool(settings, "mouse_vertical_flip",true);
         obs_data_set_default_bool(settings, "mask", false);
+        obs_data_set_default_int(settings, "screen_top_override", -1);
+        obs_data_set_default_int(settings, "screen_bottom_override", -1);
+        obs_data_set_default_int(settings, "screen_left_override", -1);
+        obs_data_set_default_int(settings, "screen_right_override", -1);
 }

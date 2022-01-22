@@ -85,7 +85,7 @@ public:
 
     void ChangeMode(const char *_mode, bool _live2D,bool _isUseMask, int id);
 
-    void ChangeMouseMovement(bool _mouse);
+    void ChangeMouseMovement(int id, bool _mouse);
 
     GLuint CreateShader();
 

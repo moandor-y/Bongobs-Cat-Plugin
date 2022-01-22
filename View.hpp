@@ -1,4 +1,4 @@
-﻿
+
 #pragma once
 
 #include <GL/glew.h>
@@ -9,7 +9,7 @@
 #include <Rendering/OpenGL/CubismOffscreenSurface_OpenGLES2.hpp>
 
 
-#define MAXVIEWDATA 1024
+#define MAXVIEWDATA 128
 
 #define MAXMODECOUNT 24
 

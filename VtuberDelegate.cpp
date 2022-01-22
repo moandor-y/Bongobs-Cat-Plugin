@@ -152,7 +152,7 @@ void VtuberDelegate::updataModelSetting(bool _randomMotion, double _delayTime,
 					int id)
 {
 	Live2DManager::GetInstance()->UpdateModelSetting(
-		_randomMotion, _delayTime, _breath, _eyeBlink, _istrack,
+		id, _randomMotion, _delayTime, _breath, _eyeBlink, _istrack,
 		_isMouseHorizontalFlip, _isMouseVerticalFlip);
 }
 
@@ -176,8 +176,8 @@ void VtuberDelegate::ChangeMode(const char *_mode,bool _live2d,bool _isUseMask, 
 	_view->Update(_live2d,_isUseMask);
 }
 
-void VtuberDelegate::ChangeMouseMovement(bool _mouse) {
-	Live2DManager::GetInstance()->ChangeMouseMovement(_mouse);
+void VtuberDelegate::ChangeMouseMovement(int id, bool _mouse) {
+	Live2DManager::GetInstance()->ChangeMouseMovement(id, _mouse);
 }
 
 

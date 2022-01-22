@@ -155,7 +155,7 @@ void View::RenderBackgroud(int id)
 void View::RenderCat(int id) {
 	Live2DManager *Live2DManager = Live2DManager::GetInstance();
 	if (isUseLive2d && _viewData[id]._mode[_mod[id]]._haseModel) {
-		Live2DManager->OnUpdate(_viewData[id]._mode[_mod[id]]._modelId);
+		Live2DManager->OnUpdate(id, _viewData[id]._mode[_mod[id]]._modelId);
 	}
 }
 
@@ -197,7 +197,7 @@ bool View::RenderLeftHands(int id) {
 
 	} else if (_viewData[id]._mode[_mod[id]]._hasLeftHandModel) {
 		if (!isUseLive2d) {	
-			Live2DManager->OnUpdate(_viewData[id]._mode[_mod[id]]._leftHandModelId);
+			Live2DManager->OnUpdate(id, _viewData[id]._mode[_mod[id]]._leftHandModelId);
 		}
 		isUp = false;		
 	} else if (isUseLive2d)
@@ -231,7 +231,7 @@ bool View::RenderRightHands(int id) {
 		}
 	} else if (_viewData[id]._mode[_mod[id]]._hasRightHandModel) {	
 		if (!isUseLive2d) {	
-			Live2DManager->OnUpdate(_viewData[id]._mode[_mod[id]]._rightHandModelId);
+			Live2DManager->OnUpdate(id, _viewData[id]._mode[_mod[id]]._rightHandModelId);
 		}
 		isUp = false;	
 	} else if (isUseLive2d)
@@ -486,17 +486,17 @@ void View::InitializeModel(int id)
 		_viewData[id]._mode[_modelCount]._haseModel =_modeinfo[_modelCount].HasModel;
 		string _catModelPath =targetPath + _modeinfo[_modelCount].CatModelPath;
 		string _catModelName = Pal::GetModelName(_catModelPath.c_str());
-		_viewData[id]._mode[_modelCount]._modelId =Live2DManager->ChangeScene((_catModelPath + "/" + _catModelName).c_str());
+		_viewData[id]._mode[_modelCount]._modelId =Live2DManager->ChangeScene(id, (_catModelPath + "/" + _catModelName).c_str());
 
 		_viewData[id]._mode[_modelCount]._hasLeftHandModel =_modeinfo[_modelCount].ModelHasLeftHandModel;
 		string _LeftHandModelPath =targetPath +_modeinfo[_modelCount].ModelLeftHandModelPath;
 		string _LeftHandModelName =Pal::GetModelName(_LeftHandModelPath.c_str());
-		_viewData[id]._mode[_modelCount]._leftHandModelId =Live2DManager->ChangeScene((_LeftHandModelPath + "/" + _LeftHandModelName).c_str());
+		_viewData[id]._mode[_modelCount]._leftHandModelId =Live2DManager->ChangeScene(id, (_LeftHandModelPath + "/" + _LeftHandModelName).c_str());
 
 		_viewData[id]._mode[_modelCount]._hasRightHandModel =_modeinfo[_modelCount].ModelHasRightHandModel;
 		string _RightHandModelPath =targetPath +_modeinfo[_modelCount].ModelRightHandModelPath;
 		string _RightHandModelName =Pal::GetModelName(_RightHandModelPath.c_str());
-		_viewData[id]._mode[_modelCount]._rightHandModelId =Live2DManager->ChangeScene((_RightHandModelPath + "/" +_RightHandModelName).c_str());
+		_viewData[id]._mode[_modelCount]._rightHandModelId =Live2DManager->ChangeScene(id, (_RightHandModelPath + "/" +_RightHandModelName).c_str());
 
 	}
 }
