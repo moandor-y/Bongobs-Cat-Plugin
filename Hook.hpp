@@ -1,6 +1,7 @@
 #pragma once
 #include <Windows.h>
 
+#include <atomic>
 #include <thread>
 
 class Hook {
@@ -15,6 +16,7 @@ class Hook {
 
  private:
   void Run();
+  void OnWmInput(HWND window, HRAWINPUT input);
 
   bool isExist;
 
@@ -30,4 +32,5 @@ class Hook {
   HWND m_hWnd;
 
   std::thread *th;
+  std::atomic_bool enabled_;
 };

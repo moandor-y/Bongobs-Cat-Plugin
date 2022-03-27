@@ -108,6 +108,16 @@ void EventManager::KeyEventUp(int key) {
       pressed_keys_.end());
 }
 
+void EventManager::AllKeysUp() {
+  std::lock_guard lock(mutex_);
+
+  for (int i = 0; i < sizeof(_keyEvent) / sizeof(_keyEvent[0]); ++i) {
+    _keyEvent[i].KeyBoardSignal = false;
+  }
+
+  pressed_keys_.clear();
+}
+
 void EventManager::LeftButtonDown() { _leftButton = true; }
 
 void EventManager::LeftButtonUp() { _leftButton = false; }

@@ -104,6 +104,8 @@ class EventManager {
 
   std::vector<int> GetPressedKeys();
 
+  void AllKeysUp();
+
  private:
   /*
    * @brief 点1から点2への距離を求める

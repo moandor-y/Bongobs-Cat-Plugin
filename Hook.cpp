@@ -1,6 +1,7 @@
 #include "Hook.hpp"
 
 #include <Windows.h>
+#include <hidusage.h>
 #include <tchar.h>
 
 #include <fstream>
@@ -13,14 +14,6 @@
 #include "VtuberDelegate.hpp"
 #include "string"
 #include "time.h"
-
-#ifndef HID_USAGE_PAGE_GENERIC
-#define HID_USAGE_PAGE_GENERIC ((USHORT)0x01)
-#endif
-
-#ifndef HID_USAGE_GENERIC_MOUSE
-#define HID_USAGE_GENERIC_MOUSE ((USHORT)0x02)
-#endif
 
 static HHOOK hhkLowLevelKybd;
 
@@ -288,10 +281,12 @@ LRESULT CALLBACK Hook::MouseHookProc(int nCode, WPARAM wParam, LPARAM lParam) {
   return CallNextHookEx(NULL, nCode, wParam, lParam);
 }
 
-LRESULT Hook::WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
-
-{
+LRESULT Hook::WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
   switch (msg) {
+    case WM_CREATE:
+      SetWindowLongPtrW(hwnd, GWLP_USERDATA,
+                        *reinterpret_cast<LONG_PTR *>(lParam));
+      break;
     case WM_COMMAND:
       break;
     case WM_PAINT:
@@ -300,30 +295,69 @@ LRESULT Hook::WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
       PostQuitMessage(0);
       break;
     case WM_INPUT: {
-      UINT dwSize = 0;
-      GetRawInputData((HRAWINPUT)lParam, (UINT)RID_INPUT, NULL, &dwSize,
-                      sizeof(RAWINPUTHEADER));
-
-      LPBYTE lpbBuffer = new BYTE[dwSize];
-      GetRawInputData((HRAWINPUT)lParam, (UINT)RID_INPUT, (LPVOID)lpbBuffer,
-                      (PUINT)&dwSize, (UINT)sizeof(RAWINPUTHEADER));
-
-      RAWINPUT *raw = (RAWINPUT *)lpbBuffer;
-      if (raw->header.dwType == RIM_TYPEMOUSE) {
-        EventManager *eventManager =
-            VtuberDelegate::GetInstance()->GetView()->GetEventManager();
-
-        int xPosRelative = raw->data.mouse.lLastX;
-        int yPosRelative = raw->data.mouse.lLastY;
-        eventManager->SetRelativeMouse(xPosRelative, yPosRelative);
+      Hook *hook =
+          reinterpret_cast<Hook *>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
+      if (hook != nullptr) {
+        hook->OnWmInput(hwnd, reinterpret_cast<HRAWINPUT>(lParam));
       }
-      delete[] lpbBuffer;
       break;
     }
-    default:
-      return DefWindowProc(hwnd, msg, wParam, lParam);
   }
   return DefWindowProc(hwnd, msg, wParam, lParam);
+}
+
+void Hook::OnWmInput(HWND window, HRAWINPUT input) {
+  if (!enabled_) {
+    return;
+  }
+
+  UINT dwSize = 0;
+  GetRawInputData(input, (UINT)RID_INPUT, NULL, &dwSize,
+                  sizeof(RAWINPUTHEADER));
+
+  LPBYTE lpbBuffer = new BYTE[dwSize];
+  GetRawInputData(input, (UINT)RID_INPUT, (LPVOID)lpbBuffer, (PUINT)&dwSize,
+                  (UINT)sizeof(RAWINPUTHEADER));
+
+  EventManager *eventManager =
+      VtuberDelegate::GetInstance()->GetView()->GetEventManager();
+
+  RAWINPUT *raw = (RAWINPUT *)lpbBuffer;
+  if (raw->header.dwType == RIM_TYPEMOUSE) {
+    int xPosRelative = raw->data.mouse.lLastX;
+    int yPosRelative = raw->data.mouse.lLastY;
+    eventManager->SetRelativeMouse(xPosRelative, yPosRelative);
+    if (raw->data.mouse.usButtonFlags & RI_MOUSE_LEFT_BUTTON_DOWN) {
+      eventManager->LeftButtonDown();
+    }
+    if (raw->data.mouse.usButtonFlags & RI_MOUSE_LEFT_BUTTON_UP) {
+      eventManager->LeftButtonUp();
+    }
+    if (raw->data.mouse.usButtonFlags & RI_MOUSE_RIGHT_BUTTON_DOWN) {
+      eventManager->RightButtonDown();
+    }
+    if (raw->data.mouse.usButtonFlags & RI_MOUSE_RIGHT_BUTTON_UP) {
+      eventManager->RightButtonUp();
+    }
+  } else if (raw->header.dwType == RIM_TYPEKEYBOARD) {
+    switch (raw->data.keyboard.Message) {
+      case WM_KEYDOWN: {
+        int key = HookCode(raw->data.keyboard.VKey);
+        if (key >= 0) {
+          eventManager->KeyEventDown(key);
+        }
+        break;
+      }
+      case WM_KEYUP: {
+        int key = HookCode(raw->data.keyboard.VKey);
+        if (key >= 0) {
+          eventManager->KeyEventUp(key);
+        }
+        break;
+      }
+    }
+  }
+  delete[] lpbBuffer;
 }
 
 Hook::Hook() {}
@@ -334,6 +368,47 @@ void Hook::Strat() {
   isExist = false;
   th = new std::thread(&Hook::Run, this);
   th->detach();
+
+  std::thread([this]() {
+    while (true) {
+      bongobs_cat::Settings settings =
+          VtuberDelegate::GetInstance()->RetrieveSettings();
+      if (settings.capture_specific_window) {
+        [&]() {
+          HWND foreground = GetForegroundWindow();
+          if (foreground == nullptr) {
+            return;
+          }
+
+          int length = GetWindowTextLengthW(foreground);
+          if (length == 0) {
+            return;
+          }
+
+          std::wstring title(length + 1, L'\0');
+          length = GetWindowTextW(foreground, title.data(), title.size());
+          if (length == 0) {
+            return;
+          }
+          title.resize(length);
+
+          bool value = (title == settings.capture_window);
+          bool prev_value = enabled_.exchange(value);
+
+          if (prev_value && !value) {
+            VtuberDelegate::GetInstance()
+                ->GetView()
+                ->GetEventManager()
+                ->AllKeysUp();
+          }
+        }();
+      } else {
+        enabled_ = true;
+      }
+
+      std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+  }).detach();
 }
 
 void Hook::Stop() {
@@ -343,9 +418,9 @@ void Hook::Stop() {
 }
 
 void Hook::Run() {
-  hhkLowLevelKybd =
-      SetWindowsHookEx(WH_KEYBOARD_LL, Hook::KeyboardHookProc, 0, 0);
-  hhkLowLevelMs = SetWindowsHookEx(WH_MOUSE_LL, Hook::MouseHookProc, 0, 0);
+  // hhkLowLevelKybd =
+  //     SetWindowsHookEx(WH_KEYBOARD_LL, Hook::KeyboardHookProc, 0, 0);
+  // hhkLowLevelMs = SetWindowsHookEx(WH_MOUSE_LL, Hook::MouseHookProc, 0, 0);
 
   HINSTANCE hInst;
   hInst = GetModuleHandle(NULL);
@@ -372,11 +447,11 @@ void Hook::Run() {
   int OSDleft = GetSystemMetrics(SM_CXSCREEN) / 2 - 300;
   int OSDTop = GetSystemMetrics(SM_CYSCREEN) / 2;
 
-  m_hWnd = CreateWindowEx(WS_EX_LAYERED | WS_EX_TOOLWINDOW | WS_EX_TOPMOST |
-                              WS_EX_TRANSPARENT | WS_EX_NOACTIVATE,
-                          wcx.lpszClassName, NULL, WS_VISIBLE | WS_POPUP,
-                          OSDleft, OSDTop, 300, 300, (HWND)NULL, (HMENU)NULL,
-                          hInst, (LPVOID)NULL);
+  m_hWnd =
+      CreateWindowExW(WS_EX_LAYERED | WS_EX_TOOLWINDOW | WS_EX_TOPMOST |
+                          WS_EX_TRANSPARENT | WS_EX_NOACTIVATE,
+                      wcx.lpszClassName, NULL, WS_VISIBLE | WS_POPUP, OSDleft,
+                      OSDTop, 300, 300, (HWND)NULL, (HMENU)NULL, hInst, this);
 
   if (!m_hWnd) {
     // fail to creat window;
@@ -384,12 +459,16 @@ void Hook::Run() {
   }
 
   // regist raw input device
-  RAWINPUTDEVICE Rid[1];
+  RAWINPUTDEVICE Rid[2];
   Rid[0].usUsagePage = HID_USAGE_PAGE_GENERIC;
   Rid[0].usUsage = HID_USAGE_GENERIC_MOUSE;
   Rid[0].dwFlags = RIDEV_INPUTSINK;
   Rid[0].hwndTarget = m_hWnd;
-  if (RegisterRawInputDevices(Rid, 1, sizeof(Rid[0])) == FALSE) {
+  Rid[1].usUsagePage = HID_USAGE_PAGE_GENERIC;
+  Rid[1].usUsage = HID_USAGE_GENERIC_KEYBOARD;
+  Rid[1].dwFlags = RIDEV_INPUTSINK;
+  Rid[1].hwndTarget = m_hWnd;
+  if (RegisterRawInputDevices(Rid, 2, sizeof(Rid[0])) == FALSE) {
     return;
   };
 

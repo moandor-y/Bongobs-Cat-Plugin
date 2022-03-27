@@ -8,6 +8,8 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+#include <mutex>
+
 #include "LAppAllocator.hpp"
 
 #define MAXMODELCOUNT 1024
@@ -15,6 +17,16 @@
 class View;
 class LAppTextureManager;
 class Hook;
+
+namespace bongobs_cat {
+
+struct Settings {
+  bool capture_specific_window;
+  std::wstring capture_window;
+};
+
+}  // namespace bongobs_cat
+
 /**
  * @brief   アプリケーションクラス。
  *   Cubism SDK の管理を行う。
@@ -87,6 +99,9 @@ class VtuberDelegate {
 
   bool CheckShader(GLuint shaderId);
 
+  bongobs_cat::Settings RetrieveSettings();
+  void UpdateSettings(bongobs_cat::Settings settings);
+
  private:
   /**
    * @brief   コンストラクタ
@@ -114,4 +129,7 @@ class VtuberDelegate {
   int ModelFileCount;                  ///模型数量
 
   RenderInfo _renderInfo[MAXMODELCOUNT];
+
+  bongobs_cat::Settings settings_ = {};
+  std::mutex settings_mutex_;
 };

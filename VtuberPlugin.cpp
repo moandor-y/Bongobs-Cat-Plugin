@@ -5,15 +5,139 @@
 #include "VtuberPlugin.hpp"
 
 #include <obs-module.h>
+#include <windows.h>
+
+#include <codecvt>
+#include <string>
 
 #include "Live2DManager.hpp"
+#include "VtuberDelegate.hpp"
 #include "VtuberFrameWork.hpp"
 
 namespace {
+constexpr char kPropertyNameCaptureSpecificWindow[] = "capture_specific_window";
+constexpr char kPropertyNameCaptureWindow[] = "capture_window";
+
 struct Vtuber_data {
   obs_source_t *source;
   uint16_t modelId;
 };
+
+bool CaptureSpecificWindowCallback(obs_properties_t *ppts, obs_property_t *p,
+                                   obs_data_t *settings) {
+  bool value = obs_data_get_bool(settings, kPropertyNameCaptureSpecificWindow);
+  obs_property_set_visible(obs_properties_get(ppts, kPropertyNameCaptureWindow),
+                           value);
+  return true;
+}
+
+bool IsWindowValid(HWND window) {
+  if (!IsWindowVisible(window)) {
+    return false;
+  }
+
+  DWORD styles = GetWindowLongPtrW(window, GWL_STYLE);
+  if (styles & WS_CHILD) {
+    return false;
+  }
+
+  DWORD ex_styles = GetWindowLongPtrW(window, GWL_EXSTYLE);
+  if (ex_styles & WS_EX_TOOLWINDOW) {
+    return false;
+  }
+
+  return true;
+}
+
+HWND NextWindow(HWND window, bool use_findwindowex) {
+  do {
+    if (use_findwindowex) {
+      window = FindWindowExW(GetDesktopWindow(), window, nullptr, nullptr);
+    } else {
+      window = GetWindow(window, GW_HWNDNEXT);
+    }
+  } while (window != nullptr && !IsWindowValid(window));
+  return window;
+}
+
+void FillWindowList(obs_property_t *p) {
+  bool use_findwindowex = true;
+
+  HWND window = FindWindowExW(GetDesktopWindow(), nullptr, nullptr, nullptr);
+  if (window == nullptr) {
+    use_findwindowex = false;
+    window = GetWindow(GetDesktopWindow(), GW_CHILD);
+  }
+
+  if (!IsWindowValid(window)) {
+    window = NextWindow(window, use_findwindowex);
+
+    if (window == nullptr && use_findwindowex) {
+      use_findwindowex = false;
+
+      window = GetWindow(GetDesktopWindow(), GW_CHILD);
+      if (!IsWindowValid(window)) {
+        window = NextWindow(window, use_findwindowex);
+      }
+    }
+  }
+
+  while (window != nullptr) {
+    int length = GetWindowTextLengthW(window);
+    if (length != 0) {
+      std::vector<wchar_t> buffer(length + 1);
+      if (GetWindowTextW(window, buffer.data(), buffer.size())) {
+        std::wstring_convert<std::codecvt_utf8<wchar_t>> convert;
+        std::string title_utf8 = convert.to_bytes(buffer.data());
+        obs_property_list_add_string(p, title_utf8.c_str(), title_utf8.c_str());
+      }
+    }
+
+    window = NextWindow(window, use_findwindowex);
+  }
+}
+
+bool InsertSelectedWindowIfNotPresent(obs_property_t *p, obs_data_t *settings) {
+  const char *current_value =
+      obs_data_get_string(settings, kPropertyNameCaptureWindow);
+  if (current_value == nullptr) {
+    return false;
+  }
+
+  const char *value = nullptr;
+  bool found = false;
+  for (int i = 0; (value = obs_property_list_item_string(p, i)) != nullptr;
+       ++i) {
+    if (std::strcmp(value, current_value) == 0) {
+      found = true;
+      break;
+    }
+  }
+
+  if (*current_value != '\0' && !found) {
+    obs_property_list_insert_string(p, /*idx=*/1, current_value, current_value);
+    obs_property_list_item_disable(p, /*idx=*/1, /*disabled=*/true);
+    return true;
+  }
+
+  return false;
+}
+
+bool OnCaptureWindowChanged(obs_properties_t *ppts, obs_property_t *p,
+                            obs_data_t *settings) {
+  return InsertSelectedWindowIfNotPresent(p, settings);
+}
+
+void UpdateSettings(obs_data_t *settings) {
+  std::string capture_window_utf8(
+      obs_data_get_string(settings, kPropertyNameCaptureWindow));
+  std::wstring_convert<std::codecvt_utf8<wchar_t>> convert;
+  VtuberDelegate::GetInstance()->UpdateSettings({
+      /*capture_specific_window=*/obs_data_get_bool(
+          settings, kPropertyNameCaptureSpecificWindow),
+      /*capture_window=*/convert.from_bytes(capture_window_utf8),
+  });
+}
 
 }  // namespace
 
@@ -63,6 +187,8 @@ void *VtuberPlugin::VtuberPlugin::VtuberCreate(obs_data_t *settings,
   Live2DManager::GetInstance()->SetScreenOverride(
       vtb->modelId, screen_top_override, screen_bottom_override,
       screen_left_override, screen_right_override);
+
+  UpdateSettings(settings);
 
   return vtb;
 }
@@ -171,6 +297,17 @@ obs_properties_t *VtuberPlugin::VtuberPlugin::VtuberGetProperties(void *data) {
                          obs_module_text("Screen Right Override"), -1,
                          1'000'000'000, 1);
 
+  p = obs_properties_add_bool(ppts, kPropertyNameCaptureSpecificWindow,
+                              obs_module_text("Capture specific window"));
+  obs_property_set_modified_callback(p, CaptureSpecificWindowCallback);
+
+  p = obs_properties_add_list(ppts, kPropertyNameCaptureWindow,
+                              obs_module_text("Window"), OBS_COMBO_TYPE_LIST,
+                              OBS_COMBO_FORMAT_STRING);
+  obs_property_list_add_string(p, "", "");
+  FillWindowList(p);
+  obs_property_set_modified_callback(p, OnCaptureWindowChanged);
+
   return ppts;
 }
 
@@ -212,6 +349,8 @@ void VtuberPlugin::VtuberPlugin::Vtuber_update(void *data,
   Live2DManager::GetInstance()->SetScreenOverride(
       vtb->modelId, screen_top_override, screen_bottom_override,
       screen_left_override, screen_right_override);
+
+  UpdateSettings(settings);
 }
 
 void VtuberPlugin::VtuberPlugin::Vtuber_defaults(obs_data_t *settings) {

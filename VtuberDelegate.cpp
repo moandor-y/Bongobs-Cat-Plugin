@@ -278,3 +278,13 @@ double VtuberDelegate::getScale(int id) { return _renderInfo[id].Scale; }
 double VtuberDelegate::GetX(int id) { return _renderInfo[id].viewPoint_x; }
 
 double VtuberDelegate::GetY(int id) { return _renderInfo[id].viewPoint_y; }
+
+bongobs_cat::Settings VtuberDelegate::RetrieveSettings() {
+  std::lock_guard<std::mutex> lock(settings_mutex_);
+  return settings_;
+}
+
+void VtuberDelegate::UpdateSettings(bongobs_cat::Settings settings) {
+  std::lock_guard<std::mutex> lock(settings_mutex_);
+  settings_ = settings;
+}
