@@ -6,8 +6,9 @@
 #pragma once
 
 #include <GL/glew.h>
-#include "LAppAllocator.hpp"
 #include <GLFW/glfw3.h>
+
+#include "LAppAllocator.hpp"
 
 #define MAXMODELCOUNT 1024
 
@@ -15,109 +16,102 @@ class View;
 class LAppTextureManager;
 class Hook;
 /**
-* @brief   アプリケーションクラス。
-*   Cubism SDK の管理を行う。
-*/
+ * @brief   アプリケーションクラス。
+ *   Cubism SDK の管理を行う。
+ */
 class VtuberDelegate {
+  struct RenderInfo {
+    bool isLoadResource;
+    // view
+    double viewPoint_x;
+    double viewPoint_y;
+    int windowWidth;
+    int windowHeight;
+    double Scale;
+  };
 
-        struct RenderInfo {
-                bool isLoadResource;
-                //view
-                double viewPoint_x;
-                double viewPoint_y;
-                int windowWidth;
-                int windowHeight; 				
-                double Scale;
-        };
+ public:
+  static VtuberDelegate *GetInstance();
 
-public:
+  static void ReleaseInstance();
 
-        static VtuberDelegate *GetInstance();
+  /*
+   *@breif 不处理opengl相关的初始化
+   */
+  bool LoadResource(int id);
 
-        static void ReleaseInstance();
+  void ReleaseResource(int id);
 
-    /*
-    *@breif 不处理opengl相关的初始化
-    */
-    bool LoadResource(int id);
+  bool Initialize(int id);
 
-    void ReleaseResource(int id);
+  void Release();
 
-    bool Initialize(int id);
+  bool isLoadResource(int id);
 
-    void Release();
+  int getBufferWidth(int id);
 
-    bool isLoadResource(int id);
+  int getBufferHeight(int id);
 
-    int getBufferWidth(int id);
+  double getScale(int id);
 
-    int getBufferHeight(int id);
+  double GetX(int id);
 
-    double getScale(int id);
+  double GetY(int id);
 
-    double GetX(int id);
+  void UpdataViewWindow(double _x, double _y, int _width, int _height,
+                        double _scale, int _id);
 
-    double GetY(int id);
+  View *GetView() { return _view; }
 
-    void UpdataViewWindow(double _x,double _y,int _width, int _height,double _scale, int _id);
+  LAppTextureManager *GetTextureManager() { return _textureManager; }
 
+  /**
+   * @brief 渲染一帧画面到指定缓冲
+   */
+  void Reader(int targatid, char *data, int bufferWidth, int bufferheight);
 
-    View* GetView() { return _view; }
+  void ChangeModel(const char *ModelName, int id);
 
-    LAppTextureManager* GetTextureManager() { return _textureManager; }
+  void updataModelSetting(bool _randomMotion, double _delayTime, bool _breath,
+                          bool _eyeBlink, bool _track,
+                          bool _isMouseHorizontalFlip,
+                          bool _isMouseVerticalFlip, int id);
 
+  const char **GetModeDefine(int &size);
 
-    /**
-    * @brief 渲染一帧画面到指定缓冲
-    */
-    void Reader(int targatid, char *data, int bufferWidth, int bufferheight);
+  void ChangeMode(const char *_mode, bool _live2D, bool _isUseMask, int id);
 
+  void ChangeMouseMovement(int id, bool _mouse);
 
-    void ChangeModel(const char *ModelName, int id);
+  GLuint CreateShader();
 
+  bool CheckShader(GLuint shaderId);
 
-    void updataModelSetting(bool _randomMotion, double _delayTime, bool _breath,
-                            bool _eyeBlink, bool _track,
-                            bool _isMouseHorizontalFlip,bool _isMouseVerticalFlip,
-                            int id);
+ private:
+  /**
+   * @brief   コンストラクタ
+   */
+  VtuberDelegate();
 
-    const char ** GetModeDefine(int &size);
+  /**
+   * @brief   デストラクタ
+   */
+  ~VtuberDelegate();
 
-    void ChangeMode(const char *_mode, bool _live2D,bool _isUseMask, int id);
+  /**
+   * @brief   Cubism SDK の初期化
+   */
+  void InitializeCubism();
 
-    void ChangeMouseMovement(int id, bool _mouse);
+  LAppAllocator _cubismAllocator;              ///< Cubism SDK Allocator
+  Csm::CubismFramework::Option _cubismOption;  ///< Cubism SDK Option
+  GLFWwindow *_window;                         ///< OpenGL ウィンドウ
+  View *_view;                                 ///< View情報
+  Hook *_hook;
+  LAppTextureManager *_textureManager;  ///< テクスチャマネージャー
 
-    GLuint CreateShader();
+  char *ModelFileName[MAXMODELCOUNT];  ///模型文件夹的名称集合
+  int ModelFileCount;                  ///模型数量
 
-    bool CheckShader(GLuint shaderId);
-private:
-    /**
-    * @brief   コンストラクタ
-    */
-        VtuberDelegate();
-
-    /**
-    * @brief   デストラクタ
-    */
-        ~VtuberDelegate();
-
-    /**
-    * @brief   Cubism SDK の初期化
-    */
-        void InitializeCubism();
-
-        
-
-
-    LAppAllocator _cubismAllocator;              ///< Cubism SDK Allocator
-    Csm::CubismFramework::Option _cubismOption;  ///< Cubism SDK Option
-    GLFWwindow* _window;                         ///< OpenGL ウィンドウ
-    View* _view;                             ///< View情報
-    Hook *_hook;
-    LAppTextureManager* _textureManager;         ///< テクスチャマネージャー
-
-    char *ModelFileName[MAXMODELCOUNT];		///模型文件夹的名称集合
-    int ModelFileCount;				///模型数量
-
-    RenderInfo _renderInfo[MAXMODELCOUNT];
-    };
+  RenderInfo _renderInfo[MAXMODELCOUNT];
+};

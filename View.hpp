@@ -3,11 +3,12 @@
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+
 #include <Math/CubismMatrix44.hpp>
 #include <Math/CubismViewMatrix.hpp>
-#include "CubismFramework.hpp"
 #include <Rendering/OpenGL/CubismOffscreenSurface_OpenGLES2.hpp>
 
+#include "CubismFramework.hpp"
 
 #define MAXVIEWDATA 128
 
@@ -22,142 +23,138 @@ class Sprite;
 class InfoReader;
 class EventManager;
 
-enum SelectTarget
-    {
-        SelectTarget_None,                ///< デフォルトのフレームバッファにレンダリング
-        SelectTarget_ModelFrameBuffer,    ///< Modelが各自持つフレームバッファにレンダリング
-        SelectTarget_ViewFrameBuffer,     ///< Viewの持つフレームバッファにレンダリング
-    };
+enum SelectTarget {
+  SelectTarget_None,  ///< デフォルトのフレームバッファにレンダリング
+  SelectTarget_ModelFrameBuffer,  ///< Modelが各自持つフレームバッファにレンダリング
+  SelectTarget_ViewFrameBuffer,  ///< Viewの持つフレームバッファにレンダリング
+};
 
 /**
-* @brief 描画クラス
-*/
+ * @brief 描画クラス
+ */
 struct Mode {
-        Sprite *_back;       ///< 背景画像
-        Sprite *_catback; ///< 背景画像&猫
+  Sprite *_back;     ///< 背景画像
+  Sprite *_catback;  ///< 背景画像&猫
 
-        bool _haseModel;
-        int _modelId;
+  bool _haseModel;
+  int _modelId;
 
-        bool _hasRightHandModel;
-        int _leftHandModelId;
+  bool _hasRightHandModel;
+  int _leftHandModelId;
 
-        Sprite *_rightHandUp; ///< 右爪
-        uint16_t _rightHandsCount;
-        Sprite *_rightHands[MAXKEYCOUNT];
+  Sprite *_rightHandUp;  ///< 右爪
+  uint16_t _rightHandsCount;
+  Sprite *_rightHands[MAXKEYCOUNT];
 
-        bool _hasLeftHandModel;
-        int _rightHandModelId;
+  bool _hasLeftHandModel;
+  int _rightHandModelId;
 
-        Sprite *_leftHandUp; ///< 左爪
-        uint16_t _leftHandsCount;
-        Sprite *_leftHands[MAXKEYCOUNT];
+  Sprite *_leftHandUp;  ///< 左爪
+  uint16_t _leftHandsCount;
+  Sprite *_leftHands[MAXKEYCOUNT];
 
-        uint16_t _keysCount;
-        Sprite *_keys[MAXKEYCOUNT];
+  uint16_t _keysCount;
+  Sprite *_keys[MAXKEYCOUNT];
 };
 
 struct ViewData {
-        Csm::CubismViewMatrix *_viewMatrix;
-        Csm::CubismMatrix44 *_deviceToScreen;
+  Csm::CubismViewMatrix *_viewMatrix;
+  Csm::CubismMatrix44 *_deviceToScreen;
 
-        int _modecount;
-        Mode _mode[MAXMODECOUNT];
+  int _modecount;
+  Mode _mode[MAXMODECOUNT];
 
-        int _curentface;
-        int _faceCount;
-        Sprite *_face[MAXFACECOUNT];
+  int _curentface;
+  int _faceCount;
+  Sprite *_face[MAXFACECOUNT];
 };
 
+class View {
+ public:
+  View();
 
+  ~View();
 
-class View
-{
-public:
+  void Initialize(int id);
 
-    View();
+  void Release(int id);
 
-    ~View();
+  void Render(int id);
 
-    void Initialize(int id);
+  void InitializeSpirite(int id);
 
-    void Release(int id);
+  void InitializeModel(int id);
 
-    void Render(int id);
+  void PreModelDraw(Model &refModel);
 
-    void InitializeSpirite(int id);
+  void PostModelDraw(Model &refModel);
 
-    void InitializeModel(int id);
+  void SwitchRenderingTarget(SelectTarget targetType, int id);
 
-    void PreModelDraw(Model& refModel);
+  void SetRenderTargetClearColor(float r, float g, float b);
 
-    void PostModelDraw(Model &refModel);
+  Csm::CubismViewMatrix *GetViewMatrix(int id);
 
-    void SwitchRenderingTarget(SelectTarget targetType,int id);
+  Csm::CubismMatrix44 *GetDeviceToScreenMatrix(int id);
 
-    void SetRenderTargetClearColor(float r, float g, float b);
+  InfoReader *GetInfoReader();
 
-     Csm::CubismViewMatrix *GetViewMatrix(int id);
+  /**
+   * @brief X座標をView座標に変換する。
+   *
+   * @param[in]       deviceX            デバイスX座標
+   */
+  float TransformViewX(float deviceX, int id) const;
 
-     Csm::CubismMatrix44 *GetDeviceToScreenMatrix(int id);
+  /**
+   * @brief Y座標をView座標に変換する。
+   *
+   * @param[in]       deviceY            デバイスY座標
+   */
+  float TransformViewY(float deviceY, int id) const;
 
-     InfoReader *GetInfoReader();
+  EventManager *GetEventManager();
 
-     /**
-    * @brief X座標をView座標に変換する。
-    *
-    * @param[in]       deviceX            デバイスX座標
-    */
-     float TransformViewX(float deviceX,int id) const;
+  void OnMouseMoved(float pointX, float pointY, int id) const;
 
-     /**
-    * @brief Y座標をView座標に変換する。
-    *
-    * @param[in]       deviceY            デバイスY座標
-    */
-     float TransformViewY(float deviceY,int id) const;
+  void Update(bool _isLive2D, bool _isUseMask);
 
-     EventManager *GetEventManager();
+  void setMod(uint16_t i, int id);
 
-     void OnMouseMoved(float pointX, float pointY,int id) const;
+ private:
+  void UpdataViewData(int id);
 
-     void Update(bool _isLive2D,bool _isUseMask);
+  int TranslateKey(int key, int id);
 
-     void setMod(uint16_t i, int id);
+  int TranslateKey2(int key, int id);
 
-private:
-    void UpdataViewData(int id);
+  void RenderBackgroud(int id);
 
-    int TranslateKey(int key,int id);
+  void RenderCat(int id);
 
-    int TranslateKey2(int key, int id);
+  void RenderKeys(int id);
 
-    void RenderBackgroud(int id);
+  bool RenderLeftHands(int id);
 
-    void RenderCat(int id);
+  bool RenderRightHands(int id);
 
-    void RenderKeys(int id);
+  void RenderUphands(bool leftup, bool righttup, int id);
 
-    bool RenderLeftHands(int id);
+  void ReanderMask(int id);
 
-    bool RenderRightHands(int id);
+  ViewData _viewData[MAXVIEWDATA] = {};
 
-    void RenderUphands(bool leftup,bool righttup,int id);
+  uint16_t _mod[MAXVIEWDATA] = {};
+  bool isUseLive2d;
+  bool isUseMask;
 
-    void ReanderMask(int id);
+  GLuint _programId;  ///< シェーダID
 
-    ViewData _viewData[MAXVIEWDATA] = {};
+  Csm::Rendering::CubismOffscreenFrame_OpenGLES2
+      _renderBuffer;  ///< モードによってはCubismモデル結果をこっちにレンダリング
+  float _clearColor[4];  ///< レンダリングターゲットのクリアカラー
 
-    uint16_t _mod[MAXVIEWDATA] = {};
-    bool isUseLive2d;
-    bool isUseMask;
-
-    GLuint _programId;                       ///< シェーダID
-
-    Csm::Rendering::CubismOffscreenFrame_OpenGLES2 _renderBuffer;   ///< モードによってはCubismモデル結果をこっちにレンダリング
-    float _clearColor[4];           ///< レンダリングターゲットのクリアカラー
-
-    SelectTarget target;
-    EventManager *eventManager;
-    InfoReader *_infoReader;
+  SelectTarget target;
+  EventManager *eventManager;
+  InfoReader *_infoReader;
 };
