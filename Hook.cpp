@@ -488,7 +488,7 @@ void Hook::Run() {
   BOOL bRet;
   MSG msg;
   while ((bRet = GetMessage(&msg, 0, 0, 0)) != 0) {
-    if (bRet == -1 || running_) {
+    if (bRet == -1 || !running_) {
       break;
     } else {
       TranslateMessage(&msg);
