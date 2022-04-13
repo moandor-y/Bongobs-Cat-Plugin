@@ -46,7 +46,6 @@ const csmChar *ParaMouseY = "ParamMouseY";
 const csmChar *ParaLeftButton = "ParamMouseLeftDown";
 const csmChar *ParaRightButton = "ParamMouseRightDown";
 
-const csmInt32 KeyAmount = 61;
 const csmChar *KeyDefine[] = {
     "a",   "b",   "c",   "d",      "e",     "f",      "g",     "h",
     "i",   "j",   "k",   "l",      "m",     "n",      "o",     "p",
@@ -56,6 +55,7 @@ const csmChar *KeyDefine[] = {
     "f2",  "f3",  "f4",  "f5",     "f6",    "f7",     "f8",    "f9",
     "f10", "f11", "f12", "up",     "down",  "left",   "right", "<",
     ">",   "[",   "]",   "rshift", "rctrl", "ctrl",   "shift"};
+const csmInt32 KeyAmount = sizeof(KeyDefine) / sizeof(*KeyDefine);
 
 const csmChar *ResourcesPath = "Bango Cat/";
 
