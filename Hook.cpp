@@ -221,6 +221,12 @@ static int HookCode(DWORD code) {
     case VK_RCONTROL:
       key = 60;
       break;
+    case VK_CONTROL:
+      key = 61;
+      break;
+    case VK_SHIFT:
+      key = 62;
+      break;
     default:
       key = -1;
       break;
@@ -341,14 +347,16 @@ void Hook::OnWmInput(HWND window, HRAWINPUT input) {
     }
   } else if (raw->header.dwType == RIM_TYPEKEYBOARD) {
     switch (raw->data.keyboard.Message) {
-      case WM_KEYDOWN: {
+      case WM_KEYDOWN:
+      case WM_SYSKEYDOWN: {
         int key = HookCode(raw->data.keyboard.VKey);
         if (key >= 0) {
           eventManager->KeyEventDown(key);
         }
         break;
       }
-      case WM_KEYUP: {
+      case WM_KEYUP:
+      case WM_SYSKEYUP: {
         int key = HookCode(raw->data.keyboard.VKey);
         if (key >= 0) {
           eventManager->KeyEventUp(key);
