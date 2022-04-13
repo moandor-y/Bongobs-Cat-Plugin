@@ -18,8 +18,6 @@ class Hook {
   void Run();
   void OnWmInput(HWND window, HRAWINPUT input);
 
-  bool isExist;
-
   static LRESULT CALLBACK KeyboardHookProc(int nCode, WPARAM wParam,
                                            LPARAM lParam);
 
@@ -32,5 +30,6 @@ class Hook {
   HWND m_hWnd;
 
   std::thread *th;
-  std::atomic_bool enabled_;
+  std::atomic_bool enabled_ = false;
+  std::atomic_bool running_ = false;
 };

@@ -370,12 +370,16 @@ void Hook::OnWmInput(HWND window, HRAWINPUT input) {
 
 Hook::Hook() {}
 
-Hook::~Hook() {}
+Hook::~Hook() {
+  if (th != nullptr) {
+    th->join();
+    delete th;
+  }
+}
 
 void Hook::Strat() {
-  isExist = false;
+  running_ = true;
   th = new std::thread(&Hook::Run, this);
-  th->detach();
 
   std::thread([this]() {
     while (true) {
@@ -420,9 +424,9 @@ void Hook::Strat() {
 }
 
 void Hook::Stop() {
-  isExist = true;
-  UnhookWindowsHookEx(hhkLowLevelKybd);
-  UnhookWindowsHookEx(hhkLowLevelMs);
+  running_ = false;
+  // UnhookWindowsHookEx(hhkLowLevelKybd);
+  // UnhookWindowsHookEx(hhkLowLevelMs);
 }
 
 void Hook::Run() {
@@ -484,7 +488,7 @@ void Hook::Run() {
   BOOL bRet;
   MSG msg;
   while ((bRet = GetMessage(&msg, 0, 0, 0)) != 0) {
-    if (bRet == -1 || isExist) {
+    if (bRet == -1 || running_) {
       break;
     } else {
       TranslateMessage(&msg);

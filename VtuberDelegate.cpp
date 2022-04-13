@@ -103,6 +103,9 @@ void VtuberDelegate::Release() {
 
   // glfwTerminate();
 
+  _hook->Stop();
+  delete _hook;
+
   delete _textureManager;
 
   delete _view;
