@@ -197,10 +197,10 @@ static int HookCode(DWORD code) {
     case VK_DOWN:
       key = 52;
       break;
-    case VK_RIGHT:
+    case VK_LEFT:
       key = 53;
       break;
-    case VK_LEFT:
+    case VK_RIGHT:
       key = 54;
       break;
     case VK_OEM_COMMA:
