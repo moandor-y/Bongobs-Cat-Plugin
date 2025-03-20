@@ -50,16 +50,16 @@ CubismEyeBlink::CubismEyeBlink(ICubismModelSetting* modelSetting)
 CubismEyeBlink::~CubismEyeBlink()
 { }
 
-csmFloat32 CubismEyeBlink::DeterminNextBlinkingTiming() const
+csmFloat32 CubismEyeBlink::DetermineNextBlinkingTiming() const
 {
     const csmFloat32 r = static_cast<csmFloat32>(rand()) / RAND_MAX;
 
     return _userTimeSeconds + (r * (2.0f * _blinkingIntervalSeconds - 1.0f));
 }
 
-void CubismEyeBlink::SetBlinkingInterval(csmFloat32 blinkigInterval)
+void CubismEyeBlink::SetBlinkingInterval(csmFloat32 blinkingInterval)
 {
-    _blinkingIntervalSeconds = blinkigInterval;
+    _blinkingIntervalSeconds = blinkingInterval;
 }
 
 void CubismEyeBlink::SetBlinkingSettings(csmFloat32 closing, csmFloat32 closed, csmFloat32 opening)
@@ -119,7 +119,7 @@ void CubismEyeBlink::UpdateParameters(CubismModel* model, csmFloat32 deltaTimeSe
         {
             t = 1.0f;
             _blinkingState = EyeState_Interval;
-            _nextBlinkingTime = DeterminNextBlinkingTiming();
+            _nextBlinkingTime = DetermineNextBlinkingTiming();
         }
 
         parameterValue = t;
@@ -138,7 +138,7 @@ void CubismEyeBlink::UpdateParameters(CubismModel* model, csmFloat32 deltaTimeSe
     case EyeState_First:
     default:
         _blinkingState = EyeState_Interval;
-        _nextBlinkingTime = DeterminNextBlinkingTiming();
+        _nextBlinkingTime = DetermineNextBlinkingTiming();
 
         parameterValue = 1.0f;
 

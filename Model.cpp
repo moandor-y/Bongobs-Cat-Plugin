@@ -70,7 +70,7 @@ Model::Model()
 }
 
 Model::~Model() {
-  _renderBuffer.DestroyOffscreenFrame();
+  _renderBuffer.DestroyOffscreenSurface();
 
   ReleaseMotions();
   ReleaseExpressions();
@@ -464,10 +464,11 @@ CubismMotionQueueEntryHandle Model::StartMotion(
     csmByte* buffer;
     csmSizeInt size;
     buffer = CreateBuffer(path.GetRawString(), &size);
+    csmFloat32 fadeTime = 0;
     if (size == 0) goto end;
     motion = static_cast<CubismMotion*>(
         LoadMotion(buffer, size, NULL, onFinishedMotionHandler));
-    csmFloat32 fadeTime = _modelSetting->GetMotionFadeInTimeValue(group, no);
+    fadeTime = _modelSetting->GetMotionFadeInTimeValue(group, no);
     if (fadeTime >= 0.0f) {
       motion->SetFadeInTime(fadeTime);
     } else {
@@ -621,7 +622,7 @@ void Model::MotionEventFired(const csmString& eventValue) {
   CubismLogInfo("%s is fired on Model!!", eventValue.GetRawString());
 }
 
-Csm::Rendering::CubismOffscreenFrame_OpenGLES2& Model::GetRenderBuffer() {
+Csm::Rendering::CubismOffscreenSurface_OpenGLES2& Model::GetRenderBuffer() {
   return _renderBuffer;
 }
 

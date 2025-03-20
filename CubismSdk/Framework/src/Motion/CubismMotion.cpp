@@ -26,6 +26,14 @@ const csmChar* TargetNameModel = "Model";
 const csmChar* TargetNameParameter = "Parameter";
 const csmChar* TargetNamePartOpacity = "PartOpacity";
 
+// Id
+const csmChar* IdNameOpacity = "Opacity";
+
+/**
+* Cubism SDK R2 以前のモーションを再現させるなら true 、アニメータのモーションを正しく再現するなら false 。
+*/
+const csmBool UseOldBeziersCurveMotion = false;
+
 CubismMotionPoint LerpPoints(const CubismMotionPoint a, const CubismMotionPoint b, const csmFloat32 t)
 {
     CubismMotionPoint result;
@@ -67,6 +75,108 @@ csmFloat32 BezierEvaluate(const CubismMotionPoint* points, const csmFloat32 time
     return LerpPoints(p012, p123, t).Value;
 }
 
+csmFloat32 BezierEvaluateBinarySearch(const CubismMotionPoint* points, const csmFloat32 time)
+{
+    const csmFloat32 x_error = 0.01f;
+
+    const csmFloat32 x = time;
+    csmFloat32 x1 = points[0].Time;
+    csmFloat32 x2 = points[3].Time;
+    csmFloat32 cx1 = points[1].Time;
+    csmFloat32 cx2 = points[2].Time;
+
+    csmFloat32 ta = 0.0f;
+    csmFloat32 tb = 1.0f;
+    csmFloat32 t = 0.0f;
+    int i = 0;
+
+    for (csmBool var33 = true; i < 20; ++i) {
+        if (x < x1 + x_error) {
+            t = ta;
+            break;
+        }
+
+        if (x2 - x_error < x) {
+            t = tb;
+            break;
+        }
+
+        csmFloat32 centerx = (cx1 + cx2) * 0.5f;
+        cx1 = (x1 + cx1) * 0.5f;
+        cx2 = (x2 + cx2) * 0.5f;
+        csmFloat32 ctrlx12 = (cx1 + centerx) * 0.5f;
+        csmFloat32 ctrlx21 = (cx2 + centerx) * 0.5f;
+        centerx = (ctrlx12 + ctrlx21) * 0.5f;
+        if (x < centerx) {
+            tb = (ta + tb) * 0.5f;
+            if (centerx - x_error < x) {
+                t = tb;
+                break;
+            }
+
+            x2 = centerx;
+            cx2 = ctrlx12;
+        }
+        else {
+            ta = (ta + tb) * 0.5f;
+            if (x < centerx + x_error) {
+                t = ta;
+                break;
+            }
+
+            x1 = centerx;
+            cx1 = ctrlx21;
+        }
+    }
+
+    if (i == 20) {
+        t = (ta + tb) * 0.5f;
+    }
+
+    if (t < 0.0f)
+    {
+        t = 0.0f;
+    }
+    if (t > 1.0f)
+    {
+        t = 1.0f;
+    }
+
+    const CubismMotionPoint p01 = LerpPoints(points[0], points[1], t);
+    const CubismMotionPoint p12 = LerpPoints(points[1], points[2], t);
+    const CubismMotionPoint p23 = LerpPoints(points[2], points[3], t);
+
+    const CubismMotionPoint p012 = LerpPoints(p01, p12, t);
+    const CubismMotionPoint p123 = LerpPoints(p12, p23, t);
+
+    return LerpPoints(p012, p123, t).Value;
+}
+
+csmFloat32 BezierEvaluateCardanoInterpretation(const CubismMotionPoint* points, const csmFloat32 time)
+{
+    const csmFloat32 x = time;
+    csmFloat32 x1 = points[0].Time;
+    csmFloat32 x2 = points[3].Time;
+    csmFloat32 cx1 = points[1].Time;
+    csmFloat32 cx2 = points[2].Time;
+
+    csmFloat32 a = x2 - 3.0f * cx2 + 3.0f * cx1 - x1;
+    csmFloat32 b = 3.0f * cx2 - 6.0f * cx1 + 3.0f * x1;
+    csmFloat32 c = 3.0f * cx1 - 3.0f * x1;
+    csmFloat32 d = x1 - x;
+
+    csmFloat32 t = CubismMath::CardanoAlgorithmForBezier(a, b, c, d);
+
+    const CubismMotionPoint p01 = LerpPoints(points[0], points[1], t);
+    const CubismMotionPoint p12 = LerpPoints(points[1], points[2], t);
+    const CubismMotionPoint p23 = LerpPoints(points[2], points[3], t);
+
+    const CubismMotionPoint p012 = LerpPoints(p01, p12, t);
+    const CubismMotionPoint p123 = LerpPoints(p12, p23, t);
+
+    return LerpPoints(p012, p123, t).Value;
+}
+
 csmFloat32 SteppedEvaluate(const CubismMotionPoint* points, const csmFloat32 time)
 {
     return points[0].Value;
@@ -77,7 +187,34 @@ csmFloat32 InverseSteppedEvaluate(const CubismMotionPoint* points, const csmFloa
     return points[1].Value;
 }
 
-csmFloat32 EvaluateCurve(const CubismMotionData* motionData, const csmInt32 index, csmFloat32 time)
+csmFloat32 CorrectEndPoint(
+    const CubismMotionData* motionData,
+    const csmInt32 segmentIndex,
+    const csmInt32 beginIndex,
+    const csmInt32 endIndex,
+    const csmFloat32 time,
+    const csmFloat32 endTime
+    )
+{
+    CubismMotionPoint motionPoint[2];
+    motionPoint[0] = motionData->Points[endIndex];
+    motionPoint[1] = motionData->Points[beginIndex];
+    motionPoint[1].Time = endTime;
+
+    switch (motionData->Segments[segmentIndex].SegmentType)
+    {
+    case CubismMotionSegmentType_Linear:
+    case CubismMotionSegmentType_Bezier:
+    default:
+        return LinearEvaluate(motionPoint, time);
+    case CubismMotionSegmentType_Stepped:
+        return SteppedEvaluate(motionPoint, time);
+    case CubismMotionSegmentType_InverseStepped:
+        return InverseSteppedEvaluate(motionPoint, time);
+    }
+}
+
+csmFloat32 EvaluateCurve(const CubismMotionData* motionData, const csmInt32 index, csmFloat32 time, const csmBool isCorrection, const csmFloat32 endTime)
 {
     // Find segment to evaluate.
     const CubismMotionCurve& curve = motionData->Curves[index];
@@ -105,6 +242,19 @@ csmFloat32 EvaluateCurve(const CubismMotionData* motionData, const csmInt32 inde
 
     if (target == -1)
     {
+        if (isCorrection && time < endTime)
+        {
+            // 終点から始点への補正処理
+            return CorrectEndPoint(
+                motionData,
+                totalSegmentCount - 1,
+                motionData->Segments[curve.BaseSegmentIndex].BasePointIndex,
+                pointPosition,
+                time,
+                endTime
+                );
+        }
+
         return motionData->Points[pointPosition].Value;
     }
 
@@ -119,12 +269,13 @@ csmFloat32 EvaluateCurve(const CubismMotionData* motionData, const csmInt32 inde
 CubismMotion::CubismMotion()
     : _sourceFrameRate(30.0f)
     , _loopDurationSeconds(-1.0f)
-    , _isLoop(false)                // trueから false へデフォルトを変更
-    , _isLoopFadeIn(true)           // ループ時にフェードインが有効かどうかのフラグ
+    , _motionBehavior(MotionBehavior_V2)
     , _lastWeight(0.0f)
     , _motionData(NULL)
     , _modelCurveIdEyeBlink(NULL)
     , _modelCurveIdLipSync(NULL)
+    , _modelCurveIdOpacity(NULL)
+    , _modelOpacity(1.0f)
 { }
 
 CubismMotion::~CubismMotion()
@@ -132,7 +283,7 @@ CubismMotion::~CubismMotion()
     CSM_DELETE(_motionData);
 }
 
-CubismMotion* CubismMotion::Create(const csmByte* buffer, csmSizeInt size, FinishedMotionCallback onFinishedMotionHandler)
+CubismMotion* CubismMotion::Create(const csmByte* buffer, csmSizeInt size, FinishedMotionCallback onFinishedMotionHandler, BeganMotionCallback onBeganMotionHandler)
 {
     CubismMotion* ret = CSM_NEW CubismMotion();
 
@@ -140,6 +291,7 @@ CubismMotion* CubismMotion::Create(const csmByte* buffer, csmSizeInt size, Finis
     ret->_sourceFrameRate = ret->_motionData->Fps;
     ret->_loopDurationSeconds = ret->_motionData->Duration;
     ret->_onFinishedMotion = onFinishedMotionHandler;
+    ret->_onBeganMotion = onBeganMotionHandler;
 
     // NOTE: Editorではループありのモーション書き出しは非対応
     // ret->_loop = (ret->_motionData->Loop > 0);
@@ -162,6 +314,21 @@ void CubismMotion::DoUpdateParameters(CubismModel* model, csmFloat32 userTimeSec
     if (_modelCurveIdLipSync == NULL)
     {
         _modelCurveIdLipSync = CubismFramework::GetIdManager()->GetId(EffectNameLipSync);
+    }
+
+    if (_modelCurveIdOpacity == NULL)
+    {
+        _modelCurveIdOpacity = CubismFramework::GetIdManager()->GetId(IdNameOpacity);
+    }
+
+    if (_motionBehavior == MotionBehavior_V2)
+    {
+        if (_previousLoopState != _isLoop)
+        {
+            // 終了時間を再計算する
+            AdjustEndTime(motionQueueEntry);
+            _previousLoopState = _isLoop;
+        }
     }
 
     csmFloat32 timeOffsetSeconds = userTimeSeconds - motionQueueEntry->GetStartTime();
@@ -202,12 +369,18 @@ void CubismMotion::DoUpdateParameters(CubismModel* model, csmFloat32 userTimeSec
 
     // 'Repeat' time as necessary.
     csmFloat32 time = timeOffsetSeconds;
+    csmFloat32 duration = _motionData->Duration;
+    csmBool isCorrection = _motionBehavior == MotionBehavior_V2 && _isLoop;
 
     if (_isLoop)
     {
-        while (time > _motionData->Duration)
+        if (_motionBehavior == MotionBehavior_V2)
         {
-            time -= _motionData->Duration;
+            duration += 1.0f / _motionData->Fps;
+        }
+        while (time > duration)
+        {
+            time -= duration;
         }
     }
 
@@ -217,7 +390,7 @@ void CubismMotion::DoUpdateParameters(CubismModel* model, csmFloat32 userTimeSec
     for (c = 0; c < _motionData->CurveCount && curves[c].Type == CubismMotionCurveTarget_Model; ++c)
     {
         // Evaluate curve and call handler.
-        value = EvaluateCurve(_motionData, c, time);
+        value = EvaluateCurve(_motionData, c, time, isCorrection, duration);
 
         if (curves[c].Id == _modelCurveIdEyeBlink)
         {
@@ -226,6 +399,13 @@ void CubismMotion::DoUpdateParameters(CubismModel* model, csmFloat32 userTimeSec
         else if (curves[c].Id == _modelCurveIdLipSync)
         {
             lipSyncValue = value;
+        }
+        else if (curves[c].Id == _modelCurveIdOpacity)
+        {
+            _modelOpacity = value;
+
+            // ------ 不透明度の値が存在すれば反映する ------
+            model->SetModelOpacity(GetModelOpacityValue());
         }
     }
 
@@ -247,7 +427,7 @@ void CubismMotion::DoUpdateParameters(CubismModel* model, csmFloat32 userTimeSec
         const csmFloat32 sourceValue = model->GetParameterValue(parameterIndex);
 
         // Evaluate curve and apply value.
-        value = EvaluateCurve(_motionData, c, time);
+        value = EvaluateCurve(_motionData, c, time, isCorrection, duration);
 
         if (eyeBlinkValue != FLT_MAX)
         {
@@ -367,21 +547,16 @@ void CubismMotion::DoUpdateParameters(CubismModel* model, csmFloat32 userTimeSec
         }
 
         // Evaluate curve and apply value.
-        value = EvaluateCurve(_motionData, c, time);
+        value = EvaluateCurve(_motionData, c, time, isCorrection, duration);
 
         model->SetParameterValue(parameterIndex, value);
     }
 
-    if (timeOffsetSeconds >= _motionData->Duration)
+    if (timeOffsetSeconds >= duration)
     {
         if (_isLoop)
         {
-            motionQueueEntry->SetStartTime(userTimeSeconds); //最初の状態へ
-            if (_isLoopFadeIn)
-            {
-                //ループ中でループ用フェードインが有効のときは、フェードイン設定し直し
-                motionQueueEntry->SetFadeInStartTime(userTimeSeconds);
-            }
+            UpdateForNextLoop(motionQueueEntry, userTimeSeconds, time);
         }
         else
         {
@@ -397,17 +572,60 @@ void CubismMotion::DoUpdateParameters(CubismModel* model, csmFloat32 userTimeSec
     _lastWeight = fadeWeight;
 }
 
+void CubismMotion::UpdateForNextLoop(CubismMotionQueueEntry* motionQueueEntry, const csmFloat32 userTimeSeconds, const csmFloat32 time)
+{
+    switch (_motionBehavior)
+    {
+    case MotionBehavior_V2:
+    default:
+        motionQueueEntry->SetStartTime(userTimeSeconds - time); //最初の状態へ
+        if (_isLoopFadeIn)
+        {
+            //ループ中でループ用フェードインが有効のときは、フェードイン設定し直し
+            motionQueueEntry->SetFadeInStartTime(userTimeSeconds - time);
+        }
+
+        if (this->_onFinishedMotion != NULL)
+        {
+            this->_onFinishedMotion(this);
+        }
+        break;
+    case MotionBehavior_V1:
+        // 旧ループ処理
+
+        motionQueueEntry->SetStartTime(userTimeSeconds); //最初の状態へ
+        if (_isLoopFadeIn)
+        {
+            //ループ中でループ用フェードインが有効のときは、フェードイン設定し直し
+            motionQueueEntry->SetFadeInStartTime(userTimeSeconds);
+        }
+        break;
+    }
+}
+
 void CubismMotion::Parse(const csmByte* motionJson, const csmSizeInt size)
 {
     _motionData = CSM_NEW CubismMotionData;
 
     CubismMotionJson* json = CSM_NEW CubismMotionJson(motionJson, size);
 
+    if (!json->IsValid())
+    {
+        CSM_DELETE(json);
+        return;
+    }
+
+#if _DEBUG
+    json->HasConsistency();
+#endif // _DEBUG
+
     _motionData->Duration = json->GetMotionDuration();
     _motionData->Loop = json->IsMotionLoop();
     _motionData->CurveCount = json->GetMotionCurveCount();
     _motionData->Fps = json->GetMotionFps();
     _motionData->EventCount = json->GetEventCount();
+
+    csmBool areBeziersRestricted = json->GetEvaluationOptionFlag( EvaluationOptionFlag_AreBeziersRestricted );
 
     if (json->IsExistMotionFadeInTime())
     {
@@ -438,7 +656,6 @@ void CubismMotion::Parse(const csmByte* motionJson, const csmSizeInt size)
 
     csmInt32 totalPointCount = 0;
     csmInt32 totalSegmentCount = 0;
-    csmBool isExPoint = false;
 
     // Curves
     for (csmInt32 curveCount = 0; curveCount < _motionData->CurveCount; ++curveCount)
@@ -455,6 +672,10 @@ void CubismMotion::Parse(const csmByte* motionJson, const csmSizeInt size)
         {
             _motionData->Curves[curveCount].Type = CubismMotionCurveTarget_PartOpacity;
         }
+        else
+        {
+            CubismLogWarning("Warning : Unable to get segment type from Curve! The number of \"CurveCount\" may be incorrect!");
+        }
 
         _motionData->Curves[curveCount].Id = json->GetMotionCurveId(curveCount);
 
@@ -469,15 +690,11 @@ void CubismMotion::Parse(const csmByte* motionJson, const csmSizeInt size)
                     ? json->GetMotionCurveFadeOutTime(curveCount)
                     : -1.0f;
 
-	// Segments
-	for (csmInt32 segmentPosition = 0; segmentPosition <json->GetMotionCurveSegmentCount(curveCount);)
+        // Segments
+        for (csmInt32 segmentPosition = 0; segmentPosition < json->GetMotionCurveSegmentCount(curveCount);)
         {
             if (segmentPosition == 0)
             {
-		if (totalPointCount + 1 >_motionData->Points.GetSize()) {
-			isExPoint = true;
-			goto end;
-		}
                 _motionData->Segments[totalSegmentCount].BasePointIndex = totalPointCount;
 
                 _motionData->Points[totalPointCount].Time = json->GetMotionCurveSegment(curveCount, segmentPosition);
@@ -490,16 +707,12 @@ void CubismMotion::Parse(const csmByte* motionJson, const csmSizeInt size)
             {
                 _motionData->Segments[totalSegmentCount].BasePointIndex = totalPointCount - 1;
             }
-	    
+
             const csmInt32 segment = static_cast<csmInt32>(json->GetMotionCurveSegment(curveCount, segmentPosition));
-	    
+
             switch (segment)
             {
             case CubismMotionSegmentType_Linear: {
-		    if (totalPointCount + 1 > _motionData->Points.GetSize()) {
-			    isExPoint = true;
-			    goto end;
-		    }
                 _motionData->Segments[totalSegmentCount].SegmentType = CubismMotionSegmentType_Linear;
                 _motionData->Segments[totalSegmentCount].Evaluate = LinearEvaluate;
 
@@ -512,12 +725,14 @@ void CubismMotion::Parse(const csmByte* motionJson, const csmSizeInt size)
                 break;
             }
             case CubismMotionSegmentType_Bezier: {
-		    if (totalPointCount + 3 > _motionData->Points.GetSize()) {
-			    isExPoint = true;
-			    goto end;
-		    }
                 _motionData->Segments[totalSegmentCount].SegmentType = CubismMotionSegmentType_Bezier;
-                _motionData->Segments[totalSegmentCount].Evaluate = BezierEvaluate;
+                if (areBeziersRestricted || UseOldBeziersCurveMotion) {
+                    _motionData->Segments[totalSegmentCount].Evaluate = BezierEvaluate;
+                }
+                else
+                {
+                    _motionData->Segments[totalSegmentCount].Evaluate = BezierEvaluateCardanoInterpretation;
+                }
 
                 _motionData->Points[totalPointCount].Time = json->GetMotionCurveSegment(curveCount, (segmentPosition + 1));
                 _motionData->Points[totalPointCount].Value = json->GetMotionCurveSegment(curveCount, (segmentPosition + 2));
@@ -534,10 +749,6 @@ void CubismMotion::Parse(const csmByte* motionJson, const csmSizeInt size)
                 break;
             }
             case CubismMotionSegmentType_Stepped: {
-		    if (totalPointCount + 1 > _motionData->Points.GetSize()) {
-			    isExPoint = true;
-			    goto end;
-		    }
                 _motionData->Segments[totalSegmentCount].SegmentType = CubismMotionSegmentType_Stepped;
                 _motionData->Segments[totalSegmentCount].Evaluate = SteppedEvaluate;
 
@@ -550,10 +761,6 @@ void CubismMotion::Parse(const csmByte* motionJson, const csmSizeInt size)
                 break;
             }
             case CubismMotionSegmentType_InverseStepped: {
-		    if (totalPointCount + 1 > _motionData->Points.GetSize()) {
-			    isExPoint = true;
-			    goto end;
-		    }
                 _motionData->Segments[totalSegmentCount].SegmentType = CubismMotionSegmentType_InverseStepped;
                 _motionData->Segments[totalSegmentCount].Evaluate = InverseSteppedEvaluate;
 
@@ -574,11 +781,9 @@ void CubismMotion::Parse(const csmByte* motionJson, const csmSizeInt size)
             ++_motionData->Curves[curveCount].SegmentCount;
             ++totalSegmentCount;
         }
-	end:
-	if (isExPoint)
-		break;
-    } 
-   
+    }
+
+
     for (csmInt32 userdatacount = 0; userdatacount < json->GetEventCount(); ++userdatacount)
     {
         _motionData->Events[userdatacount].FireTime = json->GetEventTime(userdatacount);
@@ -648,22 +853,40 @@ csmFloat32 CubismMotion::GetParameterFadeOutTime(CubismIdHandle parameterId) con
 
 void CubismMotion::IsLoop(csmBool loop)
 {
+    CubismLogWarning("IsLoop(csmBool loop) is a deprecated function. Please use SetLoop(csmBool loop).");
+
     this->_isLoop = loop;
 }
 
 csmBool CubismMotion::IsLoop() const
 {
+    CubismLogWarning("IsLoop() is a deprecated function. Please use GetLoop().");
+
     return this->_isLoop;
 }
 
 void CubismMotion::IsLoopFadeIn(csmBool loopFadeIn)
 {
+    CubismLogWarning("IsLoopFadeIn(csmBool loopFadeIn) is a deprecated function. Please use SetLoopFadeIn(csmBool loopFadeIn).");
+
     this->_isLoopFadeIn = loopFadeIn;
 }
 
 csmBool CubismMotion::IsLoopFadeIn() const
 {
+    CubismLogWarning("IsLoopFadeIn() is a deprecated function. Please use GetLoopFadeIn().");
+
     return this->_isLoopFadeIn;
+}
+
+void CubismMotion::SetMotionBehavior(MotionBehavior motionBehavior)
+{
+    _motionBehavior = motionBehavior;
+}
+
+CubismMotion::MotionBehavior CubismMotion::GetMotionBehavior() const
+{
+    return _motionBehavior;
 }
 
 csmFloat32 CubismMotion::GetLoopDuration()
@@ -691,6 +914,72 @@ const csmVector<const csmString*>& CubismMotion::GetFiredEvent(csmFloat32 before
     }
 
     return _firedEventValues;
+}
+
+csmBool CubismMotion::IsExistModelOpacity() const
+{
+    for (csmInt32 i = 0; i < _motionData->CurveCount; i++)
+    {
+        CubismMotionCurve curve = _motionData->Curves[i];
+
+        if (curve.Type != CubismMotionCurveTarget_Model)
+        {
+            continue;
+        }
+
+        if (strcmp(curve.Id->GetString().GetRawString(), IdNameOpacity) == 0)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+csmInt32 CubismMotion::GetModelOpacityIndex() const
+{
+    if (IsExistModelOpacity())
+    {
+        for (csmInt32 i = 0; i < _motionData->CurveCount; i++)
+        {
+            CubismMotionCurve curve = _motionData->Curves[i];
+
+            if (curve.Type != CubismMotionCurveTarget_Model)
+            {
+                continue;
+            }
+
+            if (strcmp(curve.Id->GetString().GetRawString(), IdNameOpacity) == 0)
+            {
+                return i;
+            }
+        }
+    }
+
+    return -1;
+}
+
+CubismIdHandle CubismMotion::GetModelOpacityId(csmInt32 index)
+{
+    if (index != -1)
+    {
+        CubismMotionCurve curve = _motionData->Curves[index];
+
+        if (curve.Type == CubismMotionCurveTarget_Model)
+        {
+            if (strcmp(curve.Id->GetString().GetRawString(), IdNameOpacity) == 0)
+            {
+                return CubismFramework::GetIdManager()->GetId(curve.Id->GetString().GetRawString());
+            }
+        }
+    }
+
+    return NULL;
+}
+
+csmFloat32 CubismMotion::GetModelOpacityValue() const
+{
+    return _modelOpacity;
 }
 
 }}}

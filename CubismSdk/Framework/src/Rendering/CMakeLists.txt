@@ -2,14 +2,9 @@ target_sources(${LIB_NAME}
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/CubismRenderer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/CubismRenderer.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/CubismClippingManager.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/CubismClippingManager.tpp
 )
-
-if(NOT DEFINED FRAMEWORK_SOURCE)
-  message(WARNING
-    "[${LIB_NAME}] Set 'FRAMEWORK_SOURCE' variable to 'OpenGL' when using OpenGL rendering."
-  )
-  set(FRAMEWORK_SOURCE OpenGL)
-endif()
 
 # Add specified rendering directory.
 add_subdirectory(${FRAMEWORK_SOURCE})

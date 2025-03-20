@@ -16,6 +16,8 @@ static const csmChar* CubismShaderEffectSrc =
     "float4x4 projectMatrix;"\
     "float4x4 clipMatrix;"\
     "float4 baseColor;"\
+    "float4 multiplyColor;"\
+    "float4 screenColor;"\
     "float4 channelFlag;"\
     "texture mainTexture;"\
     "texture maskTexture;"\
@@ -43,7 +45,7 @@ static const csmChar* CubismShaderEffectSrc =
         "Out.Position = mul(float4(In.pos, 0.0f, 1.0f), projectMatrix);"\
         "Out.clipPosition = mul(float4(In.pos, 0.0f, 1.0f), projectMatrix);"\
         "Out.uv.x = In.uv.x;"\
-        "Out.uv.y = 1.0 - +In.uv.y;"\
+        "Out.uv.y = 1.0f - +In.uv.y;"\
         "return Out;"\
     "}"\
     "float4 PixelSetupMask(VS_OUT In) : COLOR0{"\
@@ -61,7 +63,7 @@ static const csmChar* CubismShaderEffectSrc =
         "VS_OUT Out = (VS_OUT)0;"\
         "Out.Position = mul(float4(In.pos, 0.0f, 1.0f), projectMatrix);"\
         "Out.uv.x = In.uv.x;"\
-        "Out.uv.y = 1.0 - +In.uv.y;"\
+        "Out.uv.y = 1.0f - +In.uv.y;"\
         "return Out;"\
     "}"\
     "/* masked */"\
@@ -70,56 +72,74 @@ static const csmChar* CubismShaderEffectSrc =
         "Out.Position = mul(float4(In.pos, 0.0f, 1.0f), projectMatrix);"\
         "Out.clipPosition = mul(float4(In.pos, 0.0f, 1.0f), clipMatrix);"\
         "Out.uv.x = In.uv.x;"\
-        "Out.uv.y = 1.0 - In.uv.y;"\
+        "Out.uv.y = 1.0f - In.uv.y;"\
         "return Out;"\
     "}"\
     \
 "/* Pixel Shader */"\
     "/* normal */"\
     "float4 PixelNormal(VS_OUT In) : COLOR0{"\
-        "float4 color = tex2D(mainSampler, In.uv) * baseColor;"\
+        "float4 texColor = tex2D(mainSampler, In.uv);"\
+        "texColor.rgb = texColor.rgb * multiplyColor.rgb;"\
+        "texColor.rgb = (texColor.rgb + screenColor.rgb) - (texColor.rgb * screenColor.rgb);"\
+        "float4 color = texColor * baseColor;"\
         "color.xyz *= color.w;"\
         "return color;"\
     "}"\
     \
     "/* normal premult alpha */"\
     "float4 PixelNormalPremult(VS_OUT In) : COLOR0{"\
-        "float4 color = tex2D(mainSampler, In.uv) * baseColor;"\
+        "float4 texColor = tex2D(mainSampler, In.uv);"\
+        "texColor.rgb = texColor.rgb * multiplyColor.rgb;"\
+        "texColor.rgb = (texColor.rgb + screenColor.rgb * texColor.a) - (texColor.rgb * screenColor.rgb);"\
+        "float4 color = texColor * baseColor;"\
         "return color;"\
     "}"\
     \
     "/* masked */"\
     "float4 PixelMasked(VS_OUT In) : COLOR0{"\
-        "float4 color = tex2D(mainSampler, In.uv) * baseColor;"\
+        "float4 texColor = tex2D(mainSampler, In.uv);"\
+        "texColor.rgb = texColor.rgb * multiplyColor.rgb;"\
+        "texColor.rgb = (texColor.rgb + screenColor.rgb) - (texColor.rgb * screenColor.rgb);"\
+        "float4 color = texColor * baseColor;"\
         "color.xyz *= color.w;"\
-        "float4 clipMask = (1.0 - tex2D(maskSampler, In.clipPosition.xy / In.clipPosition.w)) * channelFlag;"\
+        "float4 clipMask = (1.0f - tex2D(maskSampler, In.clipPosition.xy / In.clipPosition.w)) * channelFlag;"\
         "float maskVal = clipMask.r + clipMask.g + clipMask.b + clipMask.a;"\
         "color = color * maskVal;"\
         "return color;"\
     "}"\
     "/* masked inverted */"
     "float4 PixelMaskedInverted(VS_OUT In) : COLOR0{"\
-        "float4 color = tex2D(mainSampler, In.uv) * baseColor;"\
+        "float4 texColor = tex2D(mainSampler, In.uv);"\
+        "texColor.rgb = texColor.rgb * multiplyColor.rgb;"\
+        "texColor.rgb = (texColor.rgb + screenColor.rgb) - (texColor.rgb * screenColor.rgb);"\
+        "float4 color = texColor * baseColor;"\
         "color.xyz *= color.w;"\
-        "float4 clipMask = (1.0 - tex2D(maskSampler, In.clipPosition.xy / In.clipPosition.w)) * channelFlag;"\
+        "float4 clipMask = (1.0f - tex2D(maskSampler, In.clipPosition.xy / In.clipPosition.w)) * channelFlag;"\
         "float maskVal = clipMask.r + clipMask.g + clipMask.b + clipMask.a;"\
-        "color = color * (1.0 - maskVal);"\
+        "color = color * (1.0f - maskVal);"\
         "return color;"\
     "}"\
     "/* masked premult alpha */"\
     "float4 PixelMaskedPremult(VS_OUT In) : COLOR0{"\
-        "float4 color = tex2D(mainSampler, In.uv) * baseColor;"\
-        "float4 clipMask = (1.0 - tex2D(maskSampler, In.clipPosition.xy / In.clipPosition.w)) * channelFlag;"\
+        "float4 texColor = tex2D(mainSampler, In.uv);"\
+        "texColor.rgb = texColor.rgb * multiplyColor.rgb;"\
+        "texColor.rgb = (texColor.rgb + screenColor.rgb * texColor.a) - (texColor.rgb * screenColor.rgb);"\
+        "float4 color = texColor * baseColor;"\
+        "float4 clipMask = (1.0f - tex2D(maskSampler, In.clipPosition.xy / In.clipPosition.w)) * channelFlag;"\
         "float maskVal = clipMask.r + clipMask.g + clipMask.b + clipMask.a;"\
         "color = color * maskVal;"\
         "return color;"\
     "}"\
     "/* masked inverted premult alpha */"\
     "float4 PixelMaskedInvertedPremult(VS_OUT In) : COLOR0{"\
-        "float4 color = tex2D(mainSampler, In.uv) * baseColor;"\
-        "float4 clipMask = (1.0 - tex2D(maskSampler, In.clipPosition.xy / In.clipPosition.w)) * channelFlag;"\
+        "float4 texColor = tex2D(mainSampler, In.uv);"\
+        "texColor.rgb = texColor.rgb * multiplyColor.rgb;"\
+        "texColor.rgb = (texColor.rgb + screenColor.rgb * texColor.a) - (texColor.rgb * screenColor.rgb);"\
+        "float4 color = texColor * baseColor;"\
+        "float4 clipMask = (1.0f - tex2D(maskSampler, In.clipPosition.xy / In.clipPosition.w)) * channelFlag;"\
         "float maskVal = clipMask.r + clipMask.g + clipMask.b + clipMask.a;"\
-        "color = color * (1.0 - maskVal);"\
+        "color = color * (1.0f - maskVal);"\
         "return color;"\
     "}"\
     \

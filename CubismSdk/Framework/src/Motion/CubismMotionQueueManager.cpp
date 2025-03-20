@@ -8,6 +8,7 @@
 #include "CubismMotionQueueManager.hpp"
 #include "CubismMotionQueueEntry.hpp"
 #include "CubismFramework.hpp"
+#include "CubismMotion.hpp"
 
 namespace Live2D { namespace Cubism { namespace Framework {
 
@@ -30,7 +31,7 @@ CubismMotionQueueManager::~CubismMotionQueueManager()
     }
 }
 
-CubismMotionQueueEntryHandle CubismMotionQueueManager::StartMotion(ACubismMotion* motion, csmBool autoDelete, csmFloat32 userTimeSeconds)
+CubismMotionQueueEntryHandle CubismMotionQueueManager::StartMotion(ACubismMotion* motion, csmBool autoDelete)
 {
     if (motion == NULL)
     {
@@ -48,7 +49,41 @@ CubismMotionQueueEntryHandle CubismMotionQueueManager::StartMotion(ACubismMotion
             continue;
         }
 
-        motionQueueEntry->StartFadeout(motionQueueEntry->_motion->GetFadeOutTime(), userTimeSeconds); //フェードアウトを開始し終了する
+        motionQueueEntry->SetFadeout(motionQueueEntry->_motion->GetFadeOutTime());
+    }
+
+    motionQueueEntry = CSM_NEW CubismMotionQueueEntry(); // 終了時に破棄する
+    motionQueueEntry->_autoDelete = autoDelete;
+    motionQueueEntry->_motion = motion;
+
+    _motions.PushBack(motionQueueEntry, false);
+
+    return motionQueueEntry->_motionQueueEntryHandle;
+}
+
+CubismMotionQueueEntryHandle CubismMotionQueueManager::StartMotion(ACubismMotion* motion, csmBool autoDelete, csmFloat32 userTimeSeconds)
+{
+#if _DEBUG
+    CubismLogWarning("StartMotion(ACubismMotion* motion, csmBool autoDelete, csmFloat32 userTimeSeconds) is a deprecated function. Please use StartMotion(ACubismMotion* motion, csmBool autoDelete).");
+#endif
+
+    if (motion == NULL)
+    {
+        return InvalidMotionQueueEntryHandleValue;
+    }
+
+    CubismMotionQueueEntry* motionQueueEntry = NULL;
+
+    // 既にモーションがあれば終了フラグを立てる
+    for (csmUint32 i = 0; i < _motions.GetSize(); ++i)
+    {
+        motionQueueEntry = _motions.At(i);
+        if (motionQueueEntry == NULL)
+        {
+            continue;
+        }
+
+        motionQueueEntry->SetFadeout(motionQueueEntry->_motion->GetFadeOutTime());
     }
 
     motionQueueEntry = CSM_NEW CubismMotionQueueEntry(); // 終了時に破棄する
@@ -112,11 +147,21 @@ csmBool CubismMotionQueueManager::DoUpdateMotion(CubismModel* model, csmFloat32 
         }
         else
         {
+            if (motionQueueEntry->IsTriggeredFadeOut())
+            {
+                motionQueueEntry->StartFadeout(motionQueueEntry->GetFadeOutSeconds(), userTimeSeconds);
+            }
+
             ++ite;
         }
     }
 
     return updated;
+}
+
+csmVector<CubismMotionQueueEntry*>* CubismMotionQueueManager::GetCubismMotionQueueEntries()
+{
+    return &_motions;
 }
 
 CubismMotionQueueEntry* CubismMotionQueueManager::GetCubismMotionQueueEntry(CubismMotionQueueEntryHandle motionQueueEntryNumber)

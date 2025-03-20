@@ -193,7 +193,7 @@ void CubismRenderState_D3D11::Create(ID3D11Device* device)
     samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
     samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
     samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-    samplerDesc.MaxAnisotropy = 1;
+    samplerDesc.MaxAnisotropy = 0;
     samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
     samplerDesc.MinLOD = -D3D11_FLOAT32_MAX;
     samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
@@ -356,7 +356,7 @@ void CubismRenderState_D3D11::SetZEnable(ID3D11DeviceContext* renderContext, Dep
     _stored._valid[State_ZEnable] = true;
 }
 
-void CubismRenderState_D3D11::SetSampler(ID3D11DeviceContext* renderContext, Sampler sample, csmBool force)
+void CubismRenderState_D3D11::SetSampler(ID3D11DeviceContext* renderContext, Sampler sample, csmFloat32 anisotropy, ID3D11Device* device, csmBool force)
 {
     if (!renderContext || sample<0 || Sampler_Max <= sample)
     {// パラメータ異常チェック
@@ -366,6 +366,21 @@ void CubismRenderState_D3D11::SetSampler(ID3D11DeviceContext* renderContext, Sam
     if (!_stored._valid[State_ZEnable] || force ||
         _stored._sampler != sample)
     {
+        if (anisotropy > 0.0f && sample == Sampler_Anisotropy && device != NULL)
+        {
+            // Sampler
+            ID3D11SamplerState* sampler;
+            D3D11_SAMPLER_DESC samplerDesc;
+            memset(&samplerDesc, 0, sizeof(D3D11_SAMPLER_DESC));
+            renderContext->PSGetSamplers(0, 1, &sampler);
+            sampler->GetDesc(&samplerDesc);
+            samplerDesc.Filter = D3D11_FILTER_ANISOTROPIC;
+            samplerDesc.MaxAnisotropy = anisotropy;
+
+            device->CreateSamplerState(&samplerDesc, &sampler);
+            _samplerState.PushBack(sampler);
+        }
+
         // 0番だけ使用している
         renderContext->PSSetSamplers(0, 1, &_samplerState[sample]);
     }

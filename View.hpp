@@ -150,7 +150,7 @@ class View {
 
   GLuint _programId;  ///< シェーダID
 
-  Csm::Rendering::CubismOffscreenFrame_OpenGLES2
+  Csm::Rendering::CubismOffscreenSurface_OpenGLES2
       _renderBuffer;  ///< モードによってはCubismモデル結果をこっちにレンダリング
   float _clearColor[4];  ///< レンダリングターゲットのクリアカラー
 

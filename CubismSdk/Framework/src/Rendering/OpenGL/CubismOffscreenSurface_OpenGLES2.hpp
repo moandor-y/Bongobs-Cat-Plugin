@@ -37,6 +37,11 @@
 #include <OpenGL/gl.h>
 #endif
 
+#ifdef CSM_TARGET_HARMONYOS_ES3
+#include <GLES3/gl3.h>
+#include <GLES2/gl2ext.h>
+#endif
+
 //------------ LIVE2D NAMESPACE ------------
 namespace Live2D { namespace Cubism { namespace Framework { namespace Rendering {
 
@@ -44,11 +49,11 @@ namespace Live2D { namespace Cubism { namespace Framework { namespace Rendering 
 /**
  * @brief  オフスクリーン描画用構造体
  */
-class CubismOffscreenFrame_OpenGLES2
+class CubismOffscreenSurface_OpenGLES2
 {
 public:
 
-    CubismOffscreenFrame_OpenGLES2();
+    CubismOffscreenSurface_OpenGLES2();
 
     /**
      * @brief   指定の描画ターゲットに向けて描画開始
@@ -74,17 +79,22 @@ public:
     void Clear(float r, float g, float b, float a);
 
     /**
-     *  @brief  CubismOffscreenFrame作成
+     *  @brief  CubismOffscreenSurface作成
      *  @param  displayBufferWidth     作成するバッファ幅
      *  @param  displayBufferHeight    作成するバッファ高さ
      *  @param  colorBuffer            0以外の場合、ピクセル格納領域としてcolorBufferを使用する
      */
-    csmBool CreateOffscreenFrame(csmUint32 displayBufferWidth, csmUint32 displayBufferHeight, GLuint colorBuffer = 0);
+    csmBool CreateOffscreenSurface(csmUint32 displayBufferWidth, csmUint32 displayBufferHeight, GLuint colorBuffer = 0);
 
     /**
-     * @brief   CubismOffscreenFrameの削除
+     * @brief   CubismOffscreenSurfaceの削除
      */
-    void DestroyOffscreenFrame();
+    void DestroyOffscreenSurface();
+
+    /**
+     * @brief   レンダーテクスチャメンバーへのアクセッサ
+     */
+    GLuint GetRenderTexture() const;
 
     /**
      * @brief   カラーバッファメンバーへのアクセッサ
@@ -114,6 +124,7 @@ private:
 
     csmUint32   _bufferWidth;           ///< Create時に指定された幅
     csmUint32   _bufferHeight;          ///< Create時に指定された高さ
+    csmBool     _isColorBufferInherited;    ///< 引数によって設定されたカラーバッファか？
 };
 
 

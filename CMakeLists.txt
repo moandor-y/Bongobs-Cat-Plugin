@@ -1,5 +1,15 @@
+cmake_minimum_required(VERSION 3.16)
+
+option(
+  CORE_CRL_MD
+  "Use Cubism Core that is multithread-specific and DLL-specific version"
+  ON
+)
+
 # Set app name.
 set(APP_NAME bongobs-cat)
+
+set(CMAKE_COMPILE_WARNING_AS_ERROR OFF)
 
 # Set directory paths.
 set(SDK_ROOT_PATH ${CMAKE_CURRENT_SOURCE_DIR})
@@ -13,14 +23,7 @@ set(RES_PATH ${SDK_ROOT_PATH}/Resources)
 
 project(${APP_NAME})
 
-# Detect architecture.
-if(CMAKE_EXE_LINKER_FLAGS STREQUAL "/machine:x64 /OPT:REF")
-  set(ARCH x86_64)
-elseif(CMAKE_EXE_LINKER_FLAGS STREQUAL "/machine:x86 /OPT:REF")
-  set(ARCH x86)
-else()
-  message(FATAL_ERROR "[${APP_NAME}] Invalid linker flag ${CMAKE_EXE_LINKER_FLAGS}.")
-endif()
+set(ARCH x86_64)
 
 # Detect compiler.
 if(MSVC_VERSION MATCHES 1800)
@@ -35,6 +38,9 @@ elseif(MSVC_VERSION GREATER_EQUAL 1910 AND MSVC_VERSION LESS 1920)
 elseif(MSVC_VERSION GREATER_EQUAL 1920 AND MSVC_VERSION LESS 1930)
   # Visual Studio 2019
   set(COMPILER 142)
+elseif(MSVC_VERSION GREATER_EQUAL 1930 AND MSVC_VERSION LESS 1950)
+  # Visual Studio 2022
+  set(COMPILER 143)
 elseif(MSVC)
   message(FATAL_ERROR "[${APP_NAME}] Unsupported Visual C++ compiler used.")
 else()
@@ -145,5 +151,4 @@ target_include_directories(${APP_NAME} PRIVATE ${STB_PATH})
 
 set_target_properties(${APP_NAME} PROPERTIES FOLDER "plugins/${APP_NAME}")
 
-install_obs_plugin_with_data(${APP_NAME} data)
-
+#install_obs_plugin_with_data(${APP_NAME} data)

@@ -35,7 +35,7 @@ View::View() : _programId(0), isUseLive2d(true), isUseMask(false) {
 }
 
 View::~View() {
-  _renderBuffer.DestroyOffscreenFrame();
+  _renderBuffer.DestroyOffscreenSurface();
   delete eventManager;
   delete _infoReader;
 }
@@ -103,11 +103,11 @@ void View::UpdataViewData(int id) {
               static_cast<float>(RenderTargetHeight);
   int a = id;
   if (_viewData[id]._viewMatrix) {
-    _viewData[id]._viewMatrix->Scale(0.615 * scale, scale * 1.1);
+    _viewData[id]._viewMatrix->Scale(scale * 0.3075, scale * 0.55);
     _viewData[id]._viewMatrix->Translate(x + _x, y + _y);
   } else {
     Initialize(id);
-    _viewData[id]._viewMatrix->Scale(0.615 * scale, scale * 1.1);
+    _viewData[id]._viewMatrix->Scale(scale * 0.3075, scale * 0.55);
     _viewData[id]._viewMatrix->Translate(x + _x, y + _y);
   }
 
@@ -479,7 +479,7 @@ void View::InitializeModel(int id) {
 }
 
 void View::PreModelDraw(Model &refModel) {
-  Csm::Rendering::CubismOffscreenFrame_OpenGLES2 *useTarget = NULL;
+  Csm::Rendering::CubismOffscreenSurface_OpenGLES2 *useTarget = NULL;
 
   if (target != SelectTarget_None) {
     useTarget = (target == SelectTarget_ViewFrameBuffer)
@@ -491,8 +491,8 @@ void View::PreModelDraw(Model &refModel) {
       width = VtuberDelegate::GetInstance()->getBufferWidth(0);
       height = VtuberDelegate::GetInstance()->getBufferHeight(0);
       if (width != 0 && height != 0) {
-        useTarget->CreateOffscreenFrame(static_cast<csmUint32>(width),
-                                        static_cast<csmUint32>(height));
+        useTarget->CreateOffscreenSurface(static_cast<csmUint32>(width),
+                                          static_cast<csmUint32>(height));
       }
     }
 
@@ -503,7 +503,7 @@ void View::PreModelDraw(Model &refModel) {
 }
 
 void View::PostModelDraw(Model &refModel) {
-  Csm::Rendering::CubismOffscreenFrame_OpenGLES2 *useTarget = NULL;
+  Csm::Rendering::CubismOffscreenSurface_OpenGLES2 *useTarget = NULL;
 
   if (target != SelectTarget_None) {
     useTarget = (target == SelectTarget_ViewFrameBuffer)

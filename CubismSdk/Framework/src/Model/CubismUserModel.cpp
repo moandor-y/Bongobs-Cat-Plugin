@@ -33,6 +33,7 @@ CubismUserModel::CubismUserModel()
     , _accelerationX(0.0f)
     , _accelerationY(0.0f)
     , _accelerationZ(0.0f)
+    , _mocConsistency(false)
     , _debugMode(false)
     , _renderer(NULL)
 {
@@ -42,7 +43,7 @@ CubismUserModel::CubismUserModel()
     _motionManager->SetEventCallback(CubismDefaultMotionEventCallback, this);
 
     // 表情モーションマネージャを作成
-    _expressionManager = CSM_NEW CubismMotionManager();
+    _expressionManager = CSM_NEW CubismExpressionMotionManager();
 
     // ドラッグによるアニメーション
     _dragManager = CSM_NEW CubismTargetPoint();
@@ -53,7 +54,10 @@ CubismUserModel::~CubismUserModel()
 {
     CSM_DELETE(_motionManager);
     CSM_DELETE(_expressionManager);
-    _moc->DeleteModel(_model);
+    if (_moc)
+    {
+        _moc->DeleteModel(_model);
+    }
     CubismMoc::Delete(_moc);
     CSM_DELETE(_modelMatrix);
     CubismPose::Delete(_pose);
@@ -73,39 +77,66 @@ void CubismUserModel::SetAcceleration(csmFloat32 x, csmFloat32 y, csmFloat32 z)
     _accelerationZ = z;
 }
 
-void CubismUserModel::LoadModel(const csmByte* buffer, csmSizeInt size)
+void CubismUserModel::LoadModel(const csmByte* buffer, csmSizeInt size, csmBool shouldCheckMocConsistency)
 {
-    _moc = CubismMoc::Create(buffer, size);
-    _model = _moc->CreateModel();
-    _model->SaveParameters();
+    _moc = CubismMoc::Create(buffer, size, shouldCheckMocConsistency);
 
-    if ((_moc == NULL) || (_model == NULL))
+    if (_moc == NULL)
+    {
+        CubismLogError("Failed to CubismMoc::Create().");
+        return;
+    }
+
+    _model = _moc->CreateModel();
+
+    if (_model == NULL)
     {
         CubismLogError("Failed to CreateModel().");
         return;
     }
 
+    _model->SaveParameters();
     _modelMatrix = CSM_NEW CubismModelMatrix(_model->GetCanvasWidth(), _model->GetCanvasHeight());
 
 }
 
 ACubismMotion* CubismUserModel::LoadExpression(const csmByte* buffer, csmSizeInt size, const csmChar* name)
 {
+    if (!buffer)
+    {
+        CubismLogError("Failed to LoadExpression().");
+        return NULL;
+    }
+
     return CubismExpressionMotion::Create(buffer, size);
 }
 
 void CubismUserModel::LoadPose(const csmByte* buffer, csmSizeInt size)
 {
     _pose = CubismPose::Create(buffer, size);
+    if (!_pose)
+    {
+        CubismLogError("Failed to LoadPose().");
+    }
 }
 
 void CubismUserModel::LoadPhysics(const csmByte* buffer, csmSizeInt size)
 {
     _physics = CubismPhysics::Create(buffer, size);
+    if (!_physics)
+    {
+        CubismLogError("Failed to LoadPhysics().");
+    }
 }
 
 void CubismUserModel::LoadUserData(const csmByte* buffer, csmSizeInt size)
 {
+    if (!buffer)
+    {
+        CubismLogError("Failed to LoadUserData().");
+        return;
+    }
+
     _modelUserData = CubismModelUserData::Create(buffer, size);
 }
 csmBool CubismUserModel::IsHit(CubismIdHandle drawableId, csmFloat32 pointX, csmFloat32 pointY)
@@ -157,9 +188,41 @@ csmBool CubismUserModel::IsHit(CubismIdHandle drawableId, csmFloat32 pointX, csm
     return ((left <= tx) && (tx <= right) && (top <= ty) && (ty <= bottom));
 }
 
-ACubismMotion* CubismUserModel::LoadMotion(const csmByte* buffer, csmSizeInt size, const csmChar* name, ACubismMotion::FinishedMotionCallback onFinishedMotionHandler)
+ACubismMotion* CubismUserModel::LoadMotion(const csmByte* buffer, csmSizeInt size, const csmChar* name,
+                                            ACubismMotion::FinishedMotionCallback onFinishedMotionHandler, ACubismMotion::BeganMotionCallback onBeganMotionHandler,
+                                            ICubismModelSetting* modelSetting, const csmChar* group, const csmInt32 index)
 {
-    return CubismMotion::Create(buffer, size, onFinishedMotionHandler);
+    if (!buffer)
+    {
+        CubismLogError("Failed to LoadMotion(). Buffer is NULL.");
+        return NULL;
+    }
+
+    ACubismMotion* motion = CubismMotion::Create(buffer, size, onFinishedMotionHandler, onBeganMotionHandler);
+
+    if (!motion)
+    {
+        CubismLogError("Failed to create motion from buffer in LoadMotion().");
+        return NULL;
+    }
+
+    // 必要であればモーションフェード値を上書き
+    if (modelSetting)
+    {
+        const csmFloat32 fadeInTime = modelSetting->GetMotionFadeInTimeValue(group, index);
+        if (fadeInTime >= 0.0f)
+        {
+            motion->SetFadeInTime(fadeInTime);
+        }
+
+        const csmFloat32 fadeOutTime = modelSetting->GetMotionFadeOutTimeValue(group, index);
+        if (fadeOutTime >= 0.0f)
+        {
+            motion->SetFadeOutTime(fadeOutTime);
+        }
+    }
+
+    return motion;
 }
 
 void CubismUserModel::SetDragging(csmFloat32 x, csmFloat32 y)
@@ -207,7 +270,7 @@ CubismModel* CubismUserModel::GetModel() const
     return _model;
 }
 
-void CubismUserModel::CreateRenderer()
+void CubismUserModel::CreateRenderer(csmInt32 maskBufferCount)
 {
     if (_renderer)
     {
@@ -215,7 +278,7 @@ void CubismUserModel::CreateRenderer()
     }
     _renderer = Rendering::CubismRenderer::Create();
 
-    _renderer->Initialize(_model);
+    _renderer->Initialize(_model, maskBufferCount);
 }
 
 void CubismUserModel::DeleteRenderer()

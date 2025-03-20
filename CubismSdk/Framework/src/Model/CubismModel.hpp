@@ -18,540 +18,879 @@ namespace Live2D { namespace Cubism { namespace Framework {
 class CubismMoc;
 
 /**
- * @brief モデル
- *
- * Mocデータから生成されるモデルのクラス。
+ * Handles models created from MOC data.
  */
 class CubismModel
 {
     friend class CubismMoc;
 public:
     /**
-     * @brief モデルのパラメータの更新
-     *
-     * モデルのパラメータを更新する。
+     * Structure for color information of drawing object
+     */
+    struct DrawableColorData
+    {
+        /**
+         * Constructor
+         */
+        DrawableColorData()
+            : IsOverwritten(false)
+            , Color() {};
+
+        /**
+         * Constructor
+         *
+         * @param isOverwritten whether to be overwritten
+         * @param color Texture color
+         */
+        DrawableColorData(csmBool isOverwritten, Rendering::CubismRenderer::CubismTextureColor color)
+            : IsOverwritten(isOverwritten)
+            , Color(color) {};
+
+        /**
+         * Destructor
+         */
+        virtual ~DrawableColorData() {};
+
+        csmBool IsOverwritten;                                      ///< Whether to be overwritten
+        Rendering::CubismRenderer::CubismTextureColor Color;        ///< Color
+
+    };
+
+    /**
+     * Structure to manage texture culling settings
+     */
+    struct DrawableCullingData
+    {
+        /**
+         * Constructor
+         */
+        DrawableCullingData()
+            : IsOverwritten(false)
+            , IsCulling(0) {};
+
+        /**
+         * Constructor
+         *
+         * @param isOverwritten whether to be overwritten
+         * @param isCulling Culling information
+         */
+        DrawableCullingData(csmBool isOverwritten, csmInt32 isCulling)
+            : IsOverwritten(isOverwritten)
+            , IsCulling(isCulling) {};
+
+        /**
+         * Destructor
+         */
+        virtual ~DrawableCullingData() {};
+
+        csmBool IsOverwritten;      ///< Whether to be overwritten
+        csmInt32 IsCulling;         ///< Culling information
+
+    };
+
+    /**
+     * Structure to handle texture color in RGBA
+     */
+    struct PartColorData
+    {
+        /**
+         * Constructor
+         */
+        PartColorData()
+            : IsOverwritten(false)
+            , Color() {};
+
+        /**
+         * Constructor
+         *
+         * @param isOverwritten whether to be overwritten
+         * @param color Texture color
+         */
+        PartColorData(csmBool isOverwritten, Rendering::CubismRenderer::CubismTextureColor color)
+            : IsOverwritten(isOverwritten)
+            , Color(color) {};
+
+        /**
+         * Destructor
+         */
+        virtual ~PartColorData() {};
+
+        csmBool IsOverwritten;                                      ///< Whether to be overwritten
+        Rendering::CubismRenderer::CubismTextureColor Color;        ///< Color
+    };
+
+    /**
+     * Calculates and updates the model state based on the set parameters.
      */
     void    Update() const;
 
     /**
-     * @brief キャンバスの幅の取得
+     * Returns the width of the canvas.
      *
-     * キャンバスの幅を取得する。
+     * @return Width of the canvas in pixels
+     */
+    csmFloat32  GetCanvasWidthPixel() const;
+
+    /**
+     * Returns the height of the canvas.
      *
-     * @return キャンバスの幅
+     * @return Height of the canvas in pixels
+     */
+    csmFloat32  GetCanvasHeightPixel() const;
+
+    /**
+     * Returns the pixels per unit (PPU).
+     *
+     * @return Pixels per unit
+     */
+    csmFloat32  GetPixelsPerUnit() const;
+
+    /**
+     * Returns the width of the canvas.
+     *
+     * @return Width of the canvas in PPU (pixels per unit)
      */
     csmFloat32  GetCanvasWidth() const;
 
     /**
-     * @brief キャンバスの高さの取得
+     * Returns the height of the canvas.
      *
-     * キャンバスの高さを取得する。
-     *
-     * @return キャンバスの高さ
+     * @return Height of the canvas in PPU (pixels per unit)
      */
     csmFloat32  GetCanvasHeight() const;
 
     /**
-     * @brief パーツのインデックスの取得
+     * Returns the index of the part.
      *
-     * パーツのインデックスを取得する。
+     * @param partId Part ID
      *
-     * @param[in]   partId  パーツのID
-     * @return  パーツのインデックス
+     * @return Index of the part
      */
     csmInt32    GetPartIndex(CubismIdHandle partId);
 
     /**
-     * @brief パーツの個数の取得
+     * Returns the ID of the part.
      *
-     * パーツの個数を取得する。
+     * @param partIndex Index of the part
+     * @return Part ID
+     */
+    CubismIdHandle    GetPartId(csmUint32 partIndex);
+
+    /**
+     * Returns the number of parts.
      *
-     * @return パーツの個数
+     * @return Number of parts
      */
     csmInt32    GetPartCount() const;
 
     /**
-     * @brief パーツの不透明度の設定
+     * Sets the opacity of the part.
      *
-     * パーツの不透明度を設定する。
-     *
-     * @param[in]   partId  パーツのID
-     * @param[in]   opacity 不透明度
+     * @param partId Part ID
+     * @param opacity Opacity
      */
     void        SetPartOpacity(CubismIdHandle partId, csmFloat32 opacity);
 
     /**
-     * @brief パーツの不透明度の設定
+     * Sets the opacity of the part.
      *
-     * パーツの不透明度を設定する。
-     *
-     * @param[in]   partIndex   パーツのインデックス
-     * @param[in]   opacity     パーツの不透明度
+     * @param partIndex Part index
+     * @param opacity Part opacity
      */
     void        SetPartOpacity(csmInt32 partIndex, csmFloat32 opacity);
 
     /**
-     * @brief パーツの不透明度の取得
+     * Returns the opacity of the part.
      *
-     * パーツの不透明度を取得する。
+     * @param partId Part ID
      *
-     * @param[in]   partId  パーツのID
-     * @return  パーツの不透明度
+     * @return Part opacity
      */
     csmFloat32  GetPartOpacity(CubismIdHandle partId);
 
     /**
-     * @brief パーツの不透明度の取得
+     * Returns the opacity of the part.
      *
-     * パーツの不透明度を取得する。
+     * @param partIndex Part index
      *
-     * @param[in]   partIndex   パーツのインデックス
-     * @return  パーツの不透明度
+     * @return Part opacity
      */
     csmFloat32  GetPartOpacity(csmInt32 partIndex);
 
     /**
-     * @brief パラメータのインデックスの取得
+     * Returns the index of the parameter.
      *
-     * パラメータのインデックスを取得する。
+     * @param parameterId Parameter ID
      *
-     * @param[in]   parameterId パラメータID
-     * @return  パラメータのインデックス
+     * @return Parameter index
      */
     csmInt32    GetParameterIndex(CubismIdHandle parameterId);
 
     /**
-     * @brief パラメータの個数の取得
+     * Returns the ID of the parameter
      *
-     * パラメータの個数を取得する。
+     * Retrieves the ID of the parameter.
      *
-     * @return パラメータの個数
+     * @param parameterIndex Index of the parameter
+     * @return Parameter ID
+     */
+    CubismIdHandle    GetParameterId(csmUint32 parameterIndex);
+
+    /**
+     * Returns the number of parameters.
+     *
+     * @return Number of parameters
      */
     csmInt32    GetParameterCount() const;
 
     /**
-     * @brief パラメータの最大値の取得
+     * Returns the type of the parameter.
      *
-     * パラメータの最大値を取得する。
+     * @param parameterIndex Parameter index
      *
-     * @param[in]   parameterIndex  パラメータのインデックス
-     * @return パラメータの最大値
+     * @return Parameter type
+     */
+    Core::csmParameterType GetParameterType(csmUint32 parameterIndex) const;
+
+    /**
+     * Returns the maximum value of the parameter.
+     *
+     * @param parameterIndex Parameter index
+     *
+     * @return Maximum value of the parameter
      */
     csmFloat32  GetParameterMaximumValue(csmUint32 parameterIndex) const;
 
     /**
-     * @brief パラメータの最小値の取得
+     * Returns the minimum value of the parameter.
      *
-     * パラメータの最小値を取得する。
+     * @param parameterIndex Parameter index
      *
-     * @param[in]   parameterIndex  パラメータのインデックス
-     * @return パラメータの最小値
+     * @return Minimum value of the parameter
      */
     csmFloat32  GetParameterMinimumValue(csmUint32 parameterIndex) const;
 
     /**
-     * @brief パラメータのデフォルト値の取得
+     * Returns the default value of the parameter.
      *
-     * パラメータのデフォルト値を取得する。
+     * @param parameterIndex Parameter index
      *
-     * @param[in]   parameterIndex  パラメータのインデックス
-     * @return  パラメータのデフォルト値
+     * @return Default value of the parameter
      */
     csmFloat32  GetParameterDefaultValue(csmUint32 parameterIndex) const;
 
     /**
-     * @brief パラメータの値の取得
+     * Returns the value of the parameter.
      *
-     * パラメータの値を取得する。
+     * @param parameterId Parameter ID
      *
-     * @param[in]   parameterId パラメータID
-     * @return  パラメータの値
+     * @return Parameter value
      */
     csmFloat32  GetParameterValue(CubismIdHandle parameterId);
 
     /**
-     * @brief パラメータの値の取得
+     * Returns the value of the parameter.
      *
-     * パラメータの値を取得する。
+     * @param parameterIndex Parameter index
      *
-     * @param[in]   parameterIndex  パラメータのインデックス
-     * @return  パラメータの値
+     * @return Parameter value
      */
     csmFloat32  GetParameterValue(csmInt32 parameterIndex);
 
     /**
-     * @brief パラメータの値の設定
+     * Sets the value of the parameter.
      *
-     * パラメータの値を設定する。
-     *
-     * @param[in]   parameterId パラメータID
-     * @param[in]   value       パラメータの値
-     * @param[in]   weight      重み
+     * @param parameterId Parameter ID
+     * @param value Parameter value
+     * @param weight Weight
      */
     void        SetParameterValue(CubismIdHandle parameterId, csmFloat32 value, csmFloat32 weight = 1.0f);
 
     /**
-     * @brief パラメータの値の設定
+     * Sets the value of the parameter.
      *
-     * パラメータの値を設定する。
-     *
-     * @param[in]   parameterIndex  パラメータのインデックス
-     * @param[in]   value           パラメータの値
-     * @param[in]   weight          重み
+     * @param parameterIndex Parameter index
+     * @param value Parameter value
+     * @param weight Weight
      */
     void        SetParameterValue(csmInt32 parameterIndex, csmFloat32 value, csmFloat32 weight = 1.0f);
 
     /**
-     * @brief パラメータの値の加算
+     * Adds to the value of the parameter.
      *
-     * パラメータの値を加算する。
-     *
-     * @param[in]   parameterId     パラメータID
-     * @param[in]   value           加算する値
-     * @param[in]   weight          重み
+     * @param parameterId Parameter ID
+     * @param value Value to be added
+     * @param weight Weight
      */
     void        AddParameterValue(CubismIdHandle parameterId, csmFloat32 value, csmFloat32 weight = 1.0f);
 
     /**
-     * @brief パラメータの値の加算
+     * Adds to the value of the parameter.
      *
-     * パラメータの値を加算する。
-     *
-     * @param[in]   parameterIndex  パラメータのインデックス
-     * @param[in]   value           加算する値
-     * @param[in]   weight          重み
+     * @param parameterIndex Parameter index
+     * @param value Value to be added
+     * @param weight Weight
      */
     void        AddParameterValue(csmInt32 parameterIndex, csmFloat32 value, csmFloat32 weight = 1.0f);
 
     /**
-     * @brief パラメータの値の乗算
+     * Multiplies the value of the parameter.
      *
-     * パラメータの値を乗算する。
-     *
-     * @param[in]   parameterId     パラメータID
-     * @param[in]   value           乗算する値
-     * @param[in]   weight          重み
+     * @param parameterId Parameter ID
+     * @param value Value to be multiplied
+     * @param weight Weight
      */
     void        MultiplyParameterValue(CubismIdHandle parameterId, csmFloat32 value, csmFloat32 weight = 1.0f);
 
     /**
-    * @brief パラメータの値の乗算
-    *
-    * パラメータの値を乗算する。
-    *
-    * @param[in]   parameterIndex  パラメータのインデックス
-    * @param[in]   value           乗算する値
-    * @param[in]   weight          重み
-    */
+     * Multiplies the value of the parameter.
+     *
+     * @param parameterIndex Parameter index
+     * @param value Value to be multiplied
+     * @param weight Weight
+     */
     void        MultiplyParameterValue(csmInt32 parameterIndex, csmFloat32 value, csmFloat32 weight = 1.0f);
 
     /**
-     * @brief Drawableのインデックスの取得
+     * Returns the index of the drawable.
      *
-     * Drawableのインデックスを取得する。
+     * @param drawableId Drawable ID
      *
-     * @param[in]   drawableId  DrawableのID
-     * @return  Drawableのインデックス
+     * @return Index of the drawable
      */
     csmInt32            GetDrawableIndex(CubismIdHandle drawableId) const;
 
     /**
-     * @brief Drawableの個数の取得
+     * Returns the number of drawables.
      *
-     * Drawableの個数を取得する。
-     *
-     * @return  Drawableの個数
+     * @return Number of drawables
      */
     csmInt32            GetDrawableCount() const;
 
     /**
-     * @brief DrawableのIDの取得
+     * Returns the ID of the drawable.
      *
-     * DrawableのIDを取得する。
+     * @param drawableIndex Drawable index
      *
-     * @param[in]   drawableIndex   Drawableのインデックス
-     * @return  DrawableのID
+     * @return Drawable ID
      */
     CubismIdHandle      GetDrawableId(csmInt32 drawableIndex) const;
 
     /**
-     * @brief Drawableの描画順リストの取得
+     * Returns the list of drawable render orders.
      *
-     * Drawableの描画順リストを取得する。
-     *
-     * @return Drawableの描画順リスト
+     * @return List of drawable render orders
      */
     const csmInt32*     GetDrawableRenderOrders() const;
 
     /**
-     * @brief Drawableのテクスチャインデックスリストの取得
+     * Returns the list of texture indices attached to the drawable.
      *
-     * Drawableのテクスチャインデックスリストを取得する。
+     * @deprecated This function is deprecated due to a naming error, use getDrawableTextureIndex instead.
      *
-     * @param[in]   drawableIndex   Drawableのインデックス
-     * @return  Drawableのテクスチャインデックスリスト
+     * @param drawableIndex Drawable index
+     *
+     * @return List of texture indices
      */
     csmInt32            GetDrawableTextureIndices(csmInt32 drawableIndex) const;
 
     /**
-     * @brief Drawableの頂点インデックスの個数の取得
+     * Returns the texture index attached to the drawable.
      *
-     * Drawableの頂点インデックスの個数を取得する。
+     * @param drawableIndex Drawable index
      *
-     * @param[in]   drawableIndex   Drawableのインデックス
-     * @return  Drawableの頂点インデックスの個数
+     * @return Texture index attached to the drawable
+     */
+    csmInt32            GetDrawableTextureIndex(csmInt32 drawableIndex) const;
+
+    /**
+     * Returns the number of vertex indices in the drawable.
+     *
+     * @param drawableIndex Drawable index
+     *
+     * @return Number of vertex indices in the drawable
      */
     csmInt32            GetDrawableVertexIndexCount(csmInt32 drawableIndex) const;
 
     /**
-     * @brief Drawableの頂点の個数の取得
+     * Returns the number of vertices in the drawable.
      *
-     * Drawableの頂点の個数を取得する。
+     * @param drawableIndex Drawable index
      *
-     * @param[in]   drawableIndex   Drawableのインデックス
-     * @return  Drawableの頂点の個数
+     * @return Number of vertices in the drawable
      */
     csmInt32            GetDrawableVertexCount(csmInt32 drawableIndex) const;
 
     /**
-     * @brief Drawableの頂点リストの取得
+     * Returns the list of vertices in the drawable.
      *
-     * Drawableの頂点リストを取得する。
+     * @param drawableIndex Drawable index
      *
-     * @param[in]   drawableIndex   Drawableのインデックス
-     * @return  Drawableの頂点リスト
+     * @return List of vertices in the drawable
      */
     const csmFloat32*   GetDrawableVertices(csmInt32 drawableIndex) const;
 
     /**
-     * @brief Drawableの頂点インデックスリストの取得
+     * Returns the list of vertex indices in the drawable.
      *
-     * Drawableの頂点インデックスリストを取得する。
+     * @param drawableIndex Drawable index
      *
-     * @param[in]   drawableIndex   Drawableのインデックス
-     * @return  Drawableの頂点インデックスリスト
+     * @return List of vertex indices in the drawable
      */
     const csmUint16*            GetDrawableVertexIndices(csmInt32 drawableIndex) const;
 
     /**
-     * @brief Drawableの頂点リストの取得
+     * Returns the list of vertices in the drawable.
      *
-     * Drawableの頂点リストを取得する。
+     * @param drawableIndex Drawable index
      *
-     * @param[in]   drawableIndex   Drawableのインデックス
-     * @return  Drawableの頂点リスト
+     * @return List of vertices in the drawable
      */
     const Core::csmVector2*     GetDrawableVertexPositions(csmInt32 drawableIndex) const;
 
     /**
-     * @brief Drawableの頂点のUVリストの取得
+     * Returns the list of vertex UVs in the drawable.
      *
-     * Drawableの頂点のUVリストを取得する。
+     * @param drawableIndex Drawable index
      *
-     * @param[in]   drawableIndex   Drawableのインデックス
-     * @return  Drawableの頂点のUVリスト
+     * @return List of vertex UVs in the drawable
      */
     const Core::csmVector2*     GetDrawableVertexUvs(csmInt32 drawableIndex) const;
 
     /**
-     * @brief Drawableの不透明度の取得
+     * Returns the opacity of the drawable.
      *
-     * Drawableの不透明度を取得する。
+     * @param drawableIndex Drawable index
      *
-     * @param[in]   drawableIndex   Drawableのインデックス
-     * @return  Drawableの不透明度
+     * @return Opacity of the drawable
      */
     csmFloat32                  GetDrawableOpacity(csmInt32 drawableIndex) const;
 
     /**
-     * @brief Drawableのカリング情報の取得
+     * Returns the multiply color of the drawable.
      *
-     * Drawableのカリング情報を取得する。
+     * @param drawableIndex Drawable index
      *
-     * @param[in]   drawableIndex   Drawableのインデックス
-     * @return  Drawableのカリング情報
+     * @return Multiply color of the drawable
      */
-    csmInt32                    GetDrawableCulling(csmInt32 drawableIndex) const;
+    Core::csmVector4 GetDrawableMultiplyColor(csmInt32 drawableIndex) const;
 
     /**
-     * @brief Drawableのブレンドモードの取得
+     * Returns the screen color of the drawable.
      *
-     * Drawableのブレンドモードを取得する。
+     * @param drawableIndex Drawable index
      *
-     * @param[in]   drawableIndex   Drawableのインデックス
-     * @return  Drawableのブレンドモード
+     * @return Screen color of the drawable
+     */
+    Core::csmVector4 GetDrawableScreenColor(csmInt32 drawableIndex) const;
+
+    /**
+     * Returns the index of the parent part of the drawable.
+     *
+     * @param drawableIndex Drawable index
+     *
+     * @return Index of the parent part of the drawable
+     */
+    csmInt32 GetDrawableParentPartIndex(csmUint32 drawableIndex) const;
+
+    /**
+     * Returns the blend mode of the drawable.
+     *
+     * @param drawableIndex Drawable index
+     *
+     * @return Blend mode of the drawable
      */
     Rendering::CubismRenderer::CubismBlendMode   GetDrawableBlendMode(csmInt32 drawableIndex) const;
 
     /**
-    * @brief Drawableのマスクの反転使用の取得
-    *
-    * Drawableのマスク使用時の反転設定を取得する。
-    * マスクを使用しない場合は無視される
-    *
-    * @param[in]   drawableIndex   Drawableのインデックス
-    * @return  Drawableのマスクの反転設定
-    */
+     * Returns the inverted mask setting for the drawable.
+     *
+     * @param drawableIndex Drawable index
+     *
+     * @return Inverted mask setting of the drawable. true if inverted.
+     *
+     * @note Ignored if the mask is not used.
+     */
     csmBool                    GetDrawableInvertedMask(csmInt32 drawableIndex) const;
 
     /**
-    * @brief Drawableの表示情報の取得
-    *
-    * Drawableの表示情報を取得する。
-    *
-    * @param[in]   drawableIndex   Drawableのインデックス
-    * @return  true    Drawableが表示
-    * @retval  false   Drawableが非表示
-    */
+     * Returns the visibility information of the drawable.
+     *
+     * @param drawableIndex Drawable index
+     *
+     * @return Visibility state of the drawable. true if visible.
+     */
     csmBool                  GetDrawableDynamicFlagIsVisible(csmInt32 drawableIndex) const;
 
     /**
-    * @brief Drawableの表示状態の変化の取得
-    *
-    * 直近のCubismModel::Update関数でDrawableの表示状態が変化したかを取得する。
-    *
-    * @param[in]   drawableIndex   Drawableのインデックス
-    * @retval  true    Drawableの表示状態が直近のCubismModel::Update関数で変化した
-    * @retval  false   Drawableの表示状態が直近のCubismModel::Update関数で変化していない
-    */
+     * Returns whether the visibility state of the drawable has changed from the dynamic flag.
+     *
+     * @param drawableIndex Drawable index
+     *
+     * @return true if the visibility state of the drawable has changed.
+     */
     csmBool                  GetDrawableDynamicFlagVisibilityDidChange(csmInt32 drawableIndex) const;
 
     /**
-    * @brief Drawableの不透明度の変化情報の取得
-    *
-    * 直近のCubismModel::Update関数でDrawableの不透明度が変化したかを取得する。
-    *
-    * @param[in]   drawableIndex   Drawableのインデックス
-    * @retval  true    Drawableの不透明度が直近のCubismModel::Update関数で変化した
-    * @retval  false   Drawableの不透明度が直近のCubismModel::Update関数で変化していない
-    */
+     * Returns whether the opacity of the drawable has changed from the dynamic flag.
+     *
+     * @param drawableIndex Drawable index
+     *
+     * @return true if the opacity of the drawable has changed.
+     */
     csmBool                  GetDrawableDynamicFlagOpacityDidChange(csmInt32 drawableIndex) const;
 
     /**
-    * @brief DrawableのDrawOrderの変化情報の取得
-    *
-    * 直近のCubismModel::Update関数でDrawableのDrawOrderが変化したかを取得する。
-    * DrawOrderはArtMesh上で指定する0から1000の情報
-    *
-    * @param[in]   drawableIndex   Drawableのインデックス
-    * @retval  true    Drawableの不透明度が直近のCubismModel::Update関数で変化した
-    * @retval  false   Drawableの不透明度が直近のCubismModel::Update関数で変化していない
-    */
+     * Returns whether the draw order of the drawable has changed from the dynamic flag.
+     *
+     * @param drawableIndex Drawable index
+     *
+     * @return true if the draw order of the drawable has changed.
+     *
+     * @note Draw order is information specified from 0 to 1000 on the ArtMesh.
+     */
     csmBool                  GetDrawableDynamicFlagDrawOrderDidChange(csmInt32 drawableIndex) const;
 
     /**
-    * @brief Drawableの描画順序の変化情報の取得
-    *
-    * 直近のCubismModel::Update関数でDrawableの描画の順序が変化したかを取得する。
-    *
-    * @param[in]   drawableIndex   Drawableのインデックス
-    * @retval  true    Drawableの描画の順序が直近のCubismModel::Update関数で変化した
-    * @retval  false   Drawableの描画の順序が直近のCubismModel::Update関数で変化していない
-    */
+     * Returns whether the render order of the drawable has changed from the dynamic flag.
+     *
+     * @param drawableIndex Drawable index
+     *
+     * @return true if the render order of the drawable has changed.
+     */
     csmBool                  GetDrawableDynamicFlagRenderOrderDidChange(csmInt32 drawableIndex) const;
 
     /**
-    * @brief DrawableのVertexPositionsの変化情報の取得
-    *
-    * 直近のCubismModel::Update関数でDrawableの頂点情報が変化したかを取得する。
-    *
-    * @param[in]   drawableIndex   Drawableのインデックス
-    * @retval  true    Drawableの頂点情報が直近のCubismModel::Update関数で変化した
-    * @retval  false   Drawableの頂点情報が直近のCubismModel::Update関数で変化していない
-    */
+     * Returns whether the vertex information of the drawable has changed from the dynamic flag.
+     *
+     * @param drawableIndex Drawable index
+     *
+     * @return true if the vertex information of the drawable has changed.
+     */
     csmBool                  GetDrawableDynamicFlagVertexPositionsDidChange(csmInt32 drawableIndex) const;
 
     /**
-     * @brief Drawableのクリッピングマスクリストの取得
+     * Returns whether the multiply or screen color of the drawable has changed from the dynamic flag.
      *
-     * Drawableのクリッピングマスクリストを取得する。
+     * @param drawableIndex Drawable index
      *
-     * @return  Drawableのクリッピングマスクリスト
+     * @return true if the multiply or screen color of the drawable has changed.
+     */
+    csmBool                  GetDrawableDynamicFlagBlendColorDidChange(csmInt32 drawableIndex) const;
+
+    /**
+     * Returns the list of clipping masks of the drawables.
+     *
+     * @return List of clipping masks of the drawables
      */
     const csmInt32**            GetDrawableMasks() const;
 
     /**
-     * @brief Drawableのクリッピングマスクの個数リストの取得
+     * Returns the list of the number of clipping masks of the drawables.
      *
-     * Drawableのクリッピングマスクの個数リストを取得する。
-     *
-     * @return  Drawableのクリッピングマスクの個数リスト
+     * @return List of the number of clipping masks of the drawables
      */
     const csmInt32*             GetDrawableMaskCounts() const;
 
     /**
-     * @brief クリッピングマスクの使用状態
+     * Checks whether the model uses clipping masks.
      *
-     * クリッピングマスクを使用しているかどうか？
-     *
-     * @retval  true    クリッピングマスクを使用している
-     * @retval  false   クリッピングマスクを使用していない
+     * @return true if the model uses clipping masks.
      */
     csmBool     IsUsingMasking() const;
 
     /**
-     * @brief 保存されたパラメータの読み込み
-     *
-     * 保存されたパラメータを読み込む
+     * Loads temporarily stored parameter values.
      */
     void    LoadParameters();
 
     /**
-     * @brief パラメータの保存
-     *
-     * パラメータを保存する。
+     * Stores the value of the parameter temporarily.
      */
     void    SaveParameters();
+
+    /**
+     * Returns the multiply color from the list of drawables.
+     *
+     * @param drawableIndex Drawable index
+     *
+     * @return Multiply color (CubismTextureColor)
+     */
+    Rendering::CubismRenderer::CubismTextureColor GetMultiplyColor(csmInt32 drawableIndex) const;
+
+    /**
+     * Returns the screen color from the list of drawables.
+     *
+     * @param drawableIndex Drawable index
+     *
+     * @return Screen color (CubismTextureColor)
+     */
+    Rendering::CubismRenderer::CubismTextureColor GetScreenColor(csmInt32 drawableIndex) const;
+
+    /**
+     * Sets the multiply color of the drawable.
+     *
+     * @param drawableIndex Drawable index
+     * @param color Multiply color to be set (CubismTextureColor)
+     */
+    void SetMultiplyColor(csmInt32 drawableIndex, const Rendering::CubismRenderer::CubismTextureColor& color);
+
+    /**
+     * Sets the multiply color of the drawable.
+     *
+     * @param drawableIndex Drawable index
+     * @param r Red value of the multiply color to be set
+     * @param g Green value of the multiply color to be set
+     * @param b Blue value of the multiply color to be set
+     * @param a Alpha value of the multiply color to be set
+     */
+    void SetMultiplyColor(csmInt32 drawableIndex, csmFloat32 r, csmFloat32 g, csmFloat32 b, csmFloat32 a = 1.0f);
+
+    /**
+     * Sets the screen color of the drawable.
+     *
+     * @param drawableIndex Drawable index
+     * @param color Screen color to be set (CubismTextureColor)
+     */
+    void SetScreenColor(csmInt32 drawableIndex, const Rendering::CubismRenderer::CubismTextureColor& color);
+
+    /**
+     * Sets the screen color of the drawable.
+     *
+     * @param drawableIndex Drawable index
+     * @param r Red value of the screen color to be set
+     * @param g Green value of the screen color to be set
+     * @param b Blue value of the screen color to be set
+     * @param a Alpha value of the screen color to be set
+     */
+    void SetScreenColor(csmInt32 drawableIndex, csmFloat32 r, csmFloat32 g, csmFloat32 b, csmFloat32 a = 1.0f);
+
+    /**
+     * Returns the multiply color of the part.
+     */
+    Rendering::CubismRenderer::CubismTextureColor GetPartMultiplyColor(csmInt32 partIndex) const;
+
+    /**
+     * Returns the screen color of the part.
+     */
+    Rendering::CubismRenderer::CubismTextureColor GetPartScreenColor(csmInt32 partIndex) const;
+
+    /**
+     * Sets the multiply color of the part.
+     */
+    void SetPartMultiplyColor(csmInt32 partIndex, const Rendering::CubismRenderer::CubismTextureColor& color);
+
+    /**
+     * Sets the multiply color of the part.
+     */
+    void SetPartMultiplyColor(csmInt32 partIndex, csmFloat32 r, csmFloat32 g, csmFloat32 b, csmFloat32 a = 1.0f);
+
+    /**
+     * Sets the screen color of the part.
+     */
+    void SetPartScreenColor(csmInt32 partIndex, const Rendering::CubismRenderer::CubismTextureColor& color);
+
+    /**
+     * Sets the screen color of the part.
+     */
+    void SetPartScreenColor(csmInt32 partIndex, csmFloat32 r, csmFloat32 g, csmFloat32 b, csmFloat32 a = 1.0f);
+
+    /**
+     * Returns the flag indicating whether the color set at runtime is used as the multiply color for the entire model during rendering.
+     *
+     * @return true if the color set at runtime is used; otherwise false.
+     */
+    csmBool GetOverwriteFlagForModelMultiplyColors() const;
+
+    /**
+     * Returns the flag indicating whether the color set at runtime is used as the screen color for the entire model during rendering.
+     *
+     * @return true if the color set at runtime is used; otherwise false.
+     */
+    csmBool GetOverwriteFlagForModelScreenColors() const;
+
+    /**
+     * Sets the flag indicating whether the color set at runtime is used as the multiply color for the entire model during rendering.
+     *
+     * @param value true if the color set at runtime is to be used; otherwise false.
+     */
+    void SetOverwriteFlagForModelMultiplyColors(csmBool value);
+
+    /**
+     * Sets the flag indicating whether the color set at runtime is used as the screen color for the entire model during rendering.
+     *
+     * @param value true if the color set at runtime is to be used; otherwise false.
+     */
+    void SetOverwriteFlagForModelScreenColors(csmBool value);
+
+    /**
+     * Returns the flag indicating whether the color set at runtime is used as the multiply color for the drawable during rendering.
+     *
+     * @param drawableIndex Drawable index
+     *
+     * @return true if the color set at runtime is used; otherwise false.
+     */
+    csmBool GetOverwriteFlagForDrawableMultiplyColors(csmInt32 drawableIndex) const;
+
+    /**
+     * Returns the flag indicating whether the color set at runtime is used as the screen color for the drawable during rendering.
+     *
+     * @param drawableIndex Drawable index
+     *
+     * @return true if the color set at runtime is used; otherwise false.
+     */
+    csmBool GetOverwriteFlagForDrawableScreenColors(csmInt32 drawableIndex) const;
+
+    /**
+     * Sets the flag indicating whether the color set at runtime is used as the multiply color for the drawable during rendering.
+     *
+     * @param drawableIndex Drawable index
+     * @param value true if the color set at runtime is to be used; otherwise false.
+     */
+    void SetOverwriteFlagForDrawableMultiplyColors(csmUint32 drawableIndex, csmBool value);
+
+    /**
+     * Sets the flag indicating whether the color set at runtime is used as the screen color for the drawable during rendering.
+     *
+     * @param drawableIndex Drawable index
+     * @param value true if the color set at runtime is to be used; otherwise false.
+     */
+    void SetOverwriteFlagForDrawableScreenColors(csmUint32 drawableIndex, csmBool value);
+
+    /**
+     * Checks whether the part multiply color is overridden by the SDK.
+     *
+     * @return true if the color information from the SDK is used; otherwise false.
+     */
+    csmBool GetOverwriteColorForPartMultiplyColors(csmInt32 partIndex) const;
+
+    /**
+     * Checks whether the part screen color is overridden by the SDK.
+     *
+     * @return true if the color information from the SDK is used; otherwise false.
+     */
+    csmBool GetOverwriteColorForPartScreenColors(csmInt32 partIndex) const;
+
+    /**
+     * Sets whether the part multiply color is overridden by the SDK.
+     * Use true to use the color information from the SDK, or false to use the color information from the model.
+     */
+    void SetOverwriteColorForPartMultiplyColors(csmUint32 partIndex, csmBool value);
+
+    /**
+     * Sets whether the part screen color is overridden by the SDK.
+     * Use true to use the color information from the SDK, or false to use the color information from the model.
+     */
+    void SetOverwriteColorForPartScreenColors(csmUint32 partIndex, csmBool value);
+
+    /**
+     * Returns the culling information of the drawable.
+     *
+     * @param drawableIndex Drawable index
+     *
+     * @return Culling information of the drawable
+     */
+    csmInt32 GetDrawableCulling(csmInt32 drawableIndex) const;
+
+    /**
+     * Sets the culling information of the drawable.
+     */
+    void SetDrawableCulling(csmInt32 drawableIndex, csmInt32 isCulling);
+
+    /**
+     * Checks whether the culling settings for the entire model are overridden by the SDK.
+     *
+     * @return true if the culling settings from the SDK are used; otherwise false.
+     */
+    csmBool GetOverwriteFlagForModelCullings() const;
+
+    /**
+     * Sets whether the culling settings for the entire model are overridden by the SDK.
+     * Use true to use the culling settings from the SDK, or false to use the culling settings from the model.
+     */
+    void SetOverwriteFlagForModelCullings(csmBool value);
+
+    /**
+     * Checks whether the culling settings for the drawable are overridden by the SDK.
+     *
+     * @return true if the culling settings from the SDK are used; otherwise false.
+     */
+    csmBool GetOverwriteFlagForDrawableCullings(csmInt32 drawableIndex) const;
+
+    /**
+     * Sets whether the culling settings for the drawable are overridden by the SDK.
+     * Use true to use the culling settings from the SDK, or false to use the culling settings from the model.
+     */
+    void SetOverwriteFlagForDrawableCullings(csmUint32 drawableIndex, csmBool value);
+
+    /**
+     * Returns the opacity of the model.
+     *
+     * @return Opacity value
+     */
+    csmFloat32 GetModelOpacity();
+
+    /**
+     * Sets the opacity of the model.
+     *
+     * @param value Opacity value
+     */
+    void SetModelOpacity(csmFloat32 value);
 
     Core::csmModel*     GetModel() const;
 
 private:
-    /**
-     * @brief コンストラクタ
-     *
-     * コンストラクタ。
-     *
-     * @param[in]   model   csmModelへのポインタ
-     */
     CubismModel(Core::csmModel* model);
 
-    /**
-     * @brief デストラクタ
-     *
-     * デストラクタ。
-     */
     virtual ~CubismModel();
 
-    //Prevention of copy Constructor
     CubismModel(const CubismModel&);
     CubismModel& operator=(const CubismModel&);
 
-    /**
-     * @brief 初期化
-     *
-     * 初期化する。
-     */
     void Initialize();
 
-    csmMap<csmInt32, csmFloat32>        _notExistPartOpacities;             ///< 存在していないパーツの不透明度のリスト
-    csmMap<CubismIdHandle, csmInt32>   _notExistPartId;                    ///< 存在していないパーツIDのリスト
+    void SetPartColor(
+        csmUint32 partIndex,
+        csmFloat32 r, csmFloat32 g, csmFloat32 b, csmFloat32 a,
+        csmVector<PartColorData>& partColors,
+        csmVector <DrawableColorData>& drawableColors);
 
-    csmMap<csmInt32, csmFloat32>        _notExistParameterValues;           ///< 存在していないパラメータの値のリスト
-    csmMap<CubismIdHandle, csmInt32>   _notExistParameterId;               ///< 存在していないパラメータIDのリスト
+    void SetOverwriteColorForPartColors(
+        csmUint32 partIndex,
+        csmBool value,
+        csmVector<CubismModel::PartColorData>& partColors,
+        csmVector <CubismModel::DrawableColorData>& drawableColors);
 
-    csmVector<csmFloat32>   _savedParameters;                   ///< 保存されたパラメータ
+    csmMap<csmInt32, csmFloat32>        _notExistPartOpacities;
+    csmMap<CubismIdHandle, csmInt32>   _notExistPartId;
 
-    Core::csmModel*     _model;                                 ///< モデル
+    csmMap<csmInt32, csmFloat32>        _notExistParameterValues;
+    csmMap<CubismIdHandle, csmInt32>   _notExistParameterId;
 
-    csmFloat32*         _parameterValues;                       ///< パラメータの値のリスト
-    const csmFloat32*   _parameterMaximumValues;                ///< パラメータの最大値のリスト
-    const csmFloat32*   _parameterMinimumValues;                ///< パラメータの最小値のリスト
+    csmVector<csmFloat32>   _savedParameters;
 
-    csmFloat32*         _partOpacities;                         ///< パーツの不透明度のリスト
+    Core::csmModel*     _model;
+
+    csmFloat32*         _parameterValues;
+    const csmFloat32*   _parameterMaximumValues;
+    const csmFloat32*   _parameterMinimumValues;
+
+    csmFloat32*         _partOpacities;
+
+    csmFloat32 _modelOpacity;
 
     csmVector<CubismIdHandle> _parameterIds;
     csmVector<CubismIdHandle> _partIds;
     csmVector<CubismIdHandle> _drawableIds;
+    csmVector<DrawableColorData> _userScreenColors;
+    csmVector<DrawableColorData> _userMultiplyColors;
+    csmVector<DrawableCullingData> _userCullings;
+    csmVector<PartColorData> _userPartScreenColors;
+    csmVector<PartColorData> _userPartMultiplyColors;
+    csmVector<csmVector<csmUint32> > _partChildDrawables;
+    csmBool _isOverwrittenModelMultiplyColors;
+    csmBool _isOverwrittenModelScreenColors;
+    csmBool _isOverwrittenCullings;
 };
 
 }}}
