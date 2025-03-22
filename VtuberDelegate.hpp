@@ -8,7 +8,8 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#include <mutex>
+#include <shared_mutex>
+#include <string>
 
 #include "LAppAllocator.hpp"
 
@@ -17,15 +18,6 @@
 class View;
 class LAppTextureManager;
 class Hook;
-
-namespace bongobs_cat {
-
-struct Settings {
-  bool capture_specific_window;
-  std::wstring capture_window;
-};
-
-}  // namespace bongobs_cat
 
 /**
  * @brief   アプリケーションクラス。
@@ -99,8 +91,8 @@ class VtuberDelegate {
 
   bool CheckShader(GLuint shaderId);
 
-  bongobs_cat::Settings RetrieveSettings();
-  void UpdateSettings(bongobs_cat::Settings settings);
+  std::wstring GetCurrentWindowTitle() const;
+  void SetCurrentWindowTitle(std::wstring title);
 
  private:
   /**
@@ -130,6 +122,6 @@ class VtuberDelegate {
 
   RenderInfo _renderInfo[MAXMODELCOUNT];
 
-  bongobs_cat::Settings settings_ = {};
-  std::mutex settings_mutex_;
+  std::wstring current_window_title_;
+  mutable std::shared_mutex current_window_title_mutex_;
 };

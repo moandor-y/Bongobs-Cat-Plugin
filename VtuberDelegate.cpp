@@ -8,6 +8,9 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+#include <string>
+#include <utility>
+
 #include "Define.hpp"
 #include "EventManager.hpp"
 #include "Hook.hpp"
@@ -282,12 +285,12 @@ double VtuberDelegate::GetX(int id) { return _renderInfo[id].viewPoint_x; }
 
 double VtuberDelegate::GetY(int id) { return _renderInfo[id].viewPoint_y; }
 
-bongobs_cat::Settings VtuberDelegate::RetrieveSettings() {
-  std::lock_guard<std::mutex> lock(settings_mutex_);
-  return settings_;
+std::wstring VtuberDelegate::GetCurrentWindowTitle() const {
+  std::shared_lock lock(current_window_title_mutex_);
+  return current_window_title_;
 }
 
-void VtuberDelegate::UpdateSettings(bongobs_cat::Settings settings) {
-  std::lock_guard<std::mutex> lock(settings_mutex_);
-  settings_ = settings;
+void VtuberDelegate::SetCurrentWindowTitle(std::wstring title) {
+  std::unique_lock lock(current_window_title_mutex_);
+  current_window_title_ = std::move(title);
 }

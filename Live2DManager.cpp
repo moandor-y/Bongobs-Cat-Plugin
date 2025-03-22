@@ -13,6 +13,7 @@
 
 #include <Rendering/CubismRenderer.hpp>
 #include <string>
+#include <utility>
 
 #include "Define.hpp"
 #include "EventManager.hpp"
@@ -239,9 +240,19 @@ void Live2DManager::SetScreenOverride(int id, int screen_top_override,
   settings.screen_right_override_ = screen_right_override;
 }
 
-Live2DManager::Settings& Live2DManager::GetSettings(int id) {
+Live2DManager::Settings& Live2DManager::GetSettings(const int id) {
   if (id >= settings_.size()) {
     settings_.resize(id + 1);
   }
   return settings_[id];
+}
+
+void Live2DManager::UpdateCaptureWindowSettings(
+    const int id, const CaptureWindowSettings& settings) {
+  GetSettings(id).capture_window_settings = settings;
+}
+
+const Live2DManager::CaptureWindowSettings&
+Live2DManager::GetCaptureWindowSettings(const int id) {
+  return GetSettings(id).capture_window_settings;
 }

@@ -13,6 +13,7 @@
 #include <Math/CubismViewMatrix.hpp>
 #include <Type/csmVector.hpp>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "Model.hpp"
@@ -37,6 +38,11 @@ class Live2DManager {
   };
 
  public:
+  struct CaptureWindowSettings {
+    bool capture_specific_window = false;
+    std::wstring capture_window;
+  };
+
   Live2DManager() = default;
   Live2DManager(const Live2DManager &) = delete;
   Live2DManager &operator=(const Live2DManager &) = delete;
@@ -88,6 +94,11 @@ class Live2DManager {
                          int screen_bottom_override, int screen_left_override,
                          int screen_right_override);
 
+  void UpdateCaptureWindowSettings(int id,
+                                   const CaptureWindowSettings &settings);
+
+  const CaptureWindowSettings &GetCaptureWindowSettings(int id);
+
  private:
   struct Settings {
     Csm::csmBool _isUseRelativeMouse;
@@ -103,6 +114,8 @@ class Live2DManager {
     int screen_bottom_override_;
     int screen_left_override_;
     int screen_right_override_;
+
+    CaptureWindowSettings capture_window_settings;
   };
 
   Settings &GetSettings(int id);

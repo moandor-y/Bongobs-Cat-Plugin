@@ -150,6 +150,10 @@ void View::RenderCat(int id) {
 }
 
 void View::RenderKeys(int id) {
+  if (!IsKeyCaptureActive(id)) {
+    return;
+  }
+
   for (int i = 0; i < KeyAmount; i++) {
     if (eventManager->GetKeySignal(i)) {
       int key = TranslateKey(i, id);
@@ -165,7 +169,12 @@ bool View::RenderLeftHands(int id) {
   Live2DManager *Live2DManager = Live2DManager::GetInstance();
   bool isUp = true;
   if (_viewData[id]._mode[_mod[id]]._leftHandsCount > 0) {
-    std::vector<int> pressed_keys = eventManager->GetPressedKeys();
+    std::vector<int> pressed_keys;
+
+    if (IsKeyCaptureActive(id)) {
+      pressed_keys = eventManager->GetPressedKeys();
+    }
+
     for (auto iter = pressed_keys.rbegin(); iter != pressed_keys.rend();
          ++iter) {
       int key = TranslateKey(*iter, id);
@@ -177,7 +186,6 @@ bool View::RenderLeftHands(int id) {
         break;
       }
     }
-
   } else if (_viewData[id]._mode[_mod[id]]._hasLeftHandModel) {
     if (!isUseLive2d) {
       Live2DManager->OnUpdate(id,
@@ -562,3 +570,13 @@ void View::Update(bool _isLive2D, bool _isUseMask) {
 }
 
 void View::setMod(uint16_t i, int id) { _mod[id] = i; }
+
+bool View::IsKeyCaptureActive(const int id) {
+  Live2DManager &manager = *Live2DManager::GetInstance();
+  const Live2DManager::CaptureWindowSettings &settings =
+      manager.GetCaptureWindowSettings(id);
+
+  return !settings.capture_specific_window ||
+         settings.capture_window ==
+             VtuberDelegate::GetInstance()->GetCurrentWindowTitle();
+}

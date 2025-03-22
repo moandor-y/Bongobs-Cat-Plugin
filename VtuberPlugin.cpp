@@ -8,6 +8,7 @@
 #include <windows.h>
 
 #include <codecvt>
+#include <locale>
 #include <string>
 
 #include "Live2DManager.hpp"
@@ -128,15 +129,19 @@ bool OnCaptureWindowChanged(obs_properties_t *ppts, obs_property_t *p,
   return InsertSelectedWindowIfNotPresent(p, settings);
 }
 
-void UpdateSettings(obs_data_t *settings) {
-  std::string capture_window_utf8(
-      obs_data_get_string(settings, kPropertyNameCaptureWindow));
+static void UpdateCaptureWindowSettings(const int id, obs_data_t *settings) {
+  const bool capture_specific_window =
+      obs_data_get_bool(settings, kPropertyNameCaptureSpecificWindow);
+  const char *const capture_window_utf8 =
+      obs_data_get_string(settings, kPropertyNameCaptureWindow);
+
   std::wstring_convert<std::codecvt_utf8<wchar_t>> convert;
-  VtuberDelegate::GetInstance()->UpdateSettings({
-      /*capture_specific_window=*/obs_data_get_bool(
-          settings, kPropertyNameCaptureSpecificWindow),
-      /*capture_window=*/convert.from_bytes(capture_window_utf8),
-  });
+
+  Live2DManager::GetInstance()->UpdateCaptureWindowSettings(
+      id, {
+              .capture_specific_window = capture_specific_window,
+              .capture_window = convert.from_bytes(capture_window_utf8),
+          });
 }
 
 }  // namespace
@@ -188,7 +193,7 @@ void *VtuberPlugin::VtuberPlugin::VtuberCreate(obs_data_t *settings,
       vtb->modelId, screen_top_override, screen_bottom_override,
       screen_left_override, screen_right_override);
 
-  UpdateSettings(settings);
+  UpdateCaptureWindowSettings(vtb->modelId, settings);
 
   return vtb;
 }
@@ -338,7 +343,6 @@ void VtuberPlugin::VtuberPlugin::Vtuber_update(void *data,
   int screen_left_override = obs_data_get_int(settings, "screen_left_override");
   int screen_right_override =
       obs_data_get_int(settings, "screen_right_override");
-
   const char *vtb_str = NULL;  // obs_data_get_string(settings, "models_path");
 
   VtuberFrameWork::UpData(vtb->modelId, x, y, width, height, vscale, delayTime,
@@ -350,7 +354,7 @@ void VtuberPlugin::VtuberPlugin::Vtuber_update(void *data,
       vtb->modelId, screen_top_override, screen_bottom_override,
       screen_left_override, screen_right_override);
 
-  UpdateSettings(settings);
+  UpdateCaptureWindowSettings(vtb->modelId, settings);
 }
 
 void VtuberPlugin::VtuberPlugin::Vtuber_defaults(obs_data_t *settings) {
@@ -374,4 +378,6 @@ void VtuberPlugin::VtuberPlugin::Vtuber_defaults(obs_data_t *settings) {
   obs_data_set_default_int(settings, "screen_bottom_override", -1);
   obs_data_set_default_int(settings, "screen_left_override", -1);
   obs_data_set_default_int(settings, "screen_right_override", -1);
+  obs_data_set_default_bool(settings, kPropertyNameCaptureSpecificWindow,
+                            false);
 }

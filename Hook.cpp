@@ -8,6 +8,7 @@
 #include <iostream>
 #include <sstream>
 #include <thread>
+#include <utility>
 
 #include "EventManager.hpp"
 #include "View.hpp"
@@ -313,10 +314,6 @@ LRESULT Hook::WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 }
 
 void Hook::OnWmInput(HWND window, HRAWINPUT input) {
-  if (!enabled_) {
-    return;
-  }
-
   UINT dwSize = 0;
   GetRawInputData(input, (UINT)RID_INPUT, NULL, &dwSize,
                   sizeof(RAWINPUTHEADER));
@@ -381,42 +378,26 @@ void Hook::Strat() {
   running_ = true;
   th = new std::thread(&Hook::Run, this);
 
-  std::thread([this]() {
+  std::thread([]() {
     while (true) {
-      bongobs_cat::Settings settings =
-          VtuberDelegate::GetInstance()->RetrieveSettings();
-      if (settings.capture_specific_window) {
-        [&]() {
-          HWND foreground = GetForegroundWindow();
-          if (foreground == nullptr) {
-            return;
-          }
-
-          int length = GetWindowTextLengthW(foreground);
-          if (length == 0) {
-            return;
-          }
-
-          std::wstring title(length + 1, L'\0');
-          length = GetWindowTextW(foreground, title.data(), title.size());
-          if (length == 0) {
-            return;
-          }
-          title.resize(length);
-
-          bool value = (title == settings.capture_window);
-          bool prev_value = enabled_.exchange(value);
-
-          if (prev_value && !value) {
-            VtuberDelegate::GetInstance()
-                ->GetView()
-                ->GetEventManager()
-                ->AllKeysUp();
-          }
-        }();
-      } else {
-        enabled_ = true;
+      HWND foreground = GetForegroundWindow();
+      if (foreground == nullptr) {
+        continue;
       }
+
+      int length = GetWindowTextLengthW(foreground);
+      if (length == 0) {
+        continue;
+      }
+
+      std::wstring title(length + 1, L'\0');
+      length = GetWindowTextW(foreground, title.data(), title.size());
+      if (length == 0) {
+        return;
+      }
+      title.resize(length);
+
+      VtuberDelegate::GetInstance()->SetCurrentWindowTitle(std::move(title));
 
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }

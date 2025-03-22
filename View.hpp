@@ -142,6 +142,8 @@ class View {
 
   void ReanderMask(int id);
 
+  bool IsKeyCaptureActive(int id);
+
   ViewData _viewData[MAXVIEWDATA] = {};
 
   uint16_t _mod[MAXVIEWDATA] = {};
