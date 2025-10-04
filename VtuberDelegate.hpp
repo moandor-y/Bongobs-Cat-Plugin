@@ -114,11 +114,11 @@ class VtuberDelegate {
   Csm::CubismFramework::Option _cubismOption;  ///< Cubism SDK Option
   GLFWwindow *_window;                         ///< OpenGL ウィンドウ
   View *_view;                                 ///< View情報
-  Hook *_hook;
+  std::unique_ptr<Hook> _hook = std::make_unique<Hook>();
   LAppTextureManager *_textureManager;  ///< テクスチャマネージャー
 
-  char *ModelFileName[MAXMODELCOUNT];  ///模型文件夹的名称集合
-  int ModelFileCount;                  ///模型数量
+  char *ModelFileName[MAXMODELCOUNT];  /// 模型文件夹的名称集合
+  int ModelFileCount;                  /// 模型数量
 
   RenderInfo _renderInfo[MAXMODELCOUNT];
 

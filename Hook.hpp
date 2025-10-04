@@ -29,6 +29,6 @@ class Hook {
 
   HWND m_hWnd;
 
-  std::thread *th;
+  std::thread *th = nullptr;
   std::atomic_bool running_ = false;
 };

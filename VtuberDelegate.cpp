@@ -89,7 +89,6 @@ bool VtuberDelegate::Initialize(int id) {
       glfwTerminate();
       return GL_FALSE;
     }
-    _hook = new Hook();
     _hook->Strat();
 
     InitializeCubism();
@@ -107,7 +106,6 @@ void VtuberDelegate::Release() {
   // glfwTerminate();
 
   _hook->Stop();
-  delete _hook;
 
   delete _textureManager;
 
@@ -126,10 +124,10 @@ void VtuberDelegate::Reader(int id, char *buffer, int bufferWidth,
 
   glClearColor(0.0, 0.0, 0.0, 0.0);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  //描画更新
+  // 描画更新
   _view->Render(id);
 
-  //写入缓冲
+  // 写入缓冲
   glReadPixels(0, 0, bufferWidth, bufferheight, GL_RGBA, GL_UNSIGNED_BYTE,
                buffer);
 }
@@ -201,7 +199,7 @@ void VtuberDelegate::InitializeCubism() {
 }
 
 GLuint VtuberDelegate::CreateShader() {
-  //バーテックスシェーダのコンパイル
+  // バーテックスシェーダのコンパイル
   GLuint vertexShaderId = glCreateShader(GL_VERTEX_SHADER);
   const char *vertexShader =
       "#version 120\n"
@@ -218,7 +216,7 @@ GLuint VtuberDelegate::CreateShader() {
     return 0;
   }
 
-  //フラグメントシェーダのコンパイル
+  // フラグメントシェーダのコンパイル
   GLuint fragmentShaderId = glCreateShader(GL_FRAGMENT_SHADER);
   const char *fragmentShader =
       "#version 120\n"
@@ -234,7 +232,7 @@ GLuint VtuberDelegate::CreateShader() {
     return 0;
   }
 
-  //プログラムオブジェクトの作成
+  // プログラムオブジェクトの作成
   GLuint programId = glCreateProgram();
   glAttachShader(programId, vertexShaderId);
   glAttachShader(programId, fragmentShaderId);
